@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fakta Kucing — PawTrainer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+<script>Auth.requireAuth();</script>
+<script src="js/navbar.js"></script>
+<script>renderNavbar('catfacts');</script>
+
+<main class="page">
+    <div class="page__header">
+        <h1 class="page__title">💡 Fakta Unik Kucing</h1>
+        <p class="page__subtitle" id="factSubtitle">Tahukah kamu? Kucing menyimpan banyak rahasia!</p>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.75rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+            <label style="font-size:0.875rem;color:var(--text-secondary);font-weight:500;">Tampilkan:</label>
+            <select id="limitSelect" style="padding:0.5rem 0.8rem;border:1.5px solid var(--sand);border-radius:var(--radius);background:var(--warm-white);font-family:var(--font-body);color:var(--text-secondary);cursor:pointer;">
+                <option value="5">5 fakta</option>
+                <option value="10" selected>10 fakta</option>
+                <option value="20">20 fakta</option>
+            </select>
+        </div>
+        <button class="btn btn--primary btn--sm" id="refreshBtn">
+            🔄 Muat Fakta Baru
+        </button>
+    </div>
+
+    <div id="errorBanner" class="alert alert--error" style="display:none;"></div>
+
+    <div id="factsGrid" class="grid grid--auto" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">
+        <!-- Skeletons -->
+        ${[1,2,3,4,5,6].map(() => `
+        <div class="skeleton-card" style="padding:1.5rem;">
+            <div class="skeleton skeleton-line" style="height:80px;border-radius:10px;"></div>
+            <div class="skeleton skeleton-line skeleton-line--short" style="margin-top:10px;"></div>
+        </div>`).join('')}
+    </div>
+</main>
+
+<script>
+    async function loadFacts() {
+        const limit     = document.getElementById('limitSelect').value;
+        const grid      = document.getElementById('factsGrid');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        document.getElementById('errorBanner').style.display = 'none';
+        UI.setLoading(refreshBtn, true);
+
+        // Show skeletons
+        grid.innerHTML = Array(parseInt(limit)).fill(0).map(() => `
+            <div class="skeleton-card" style="padding:1.5rem;">
+                <div class="skeleton skeleton-line" style="height:80px;border-radius:10px;"></div>
+                <div class="skeleton skeleton-line skeleton-line--short" style="margin-top:10px;"></div>
+            </div>`).join('');
+
+        try {
+            const res   = await ExternalAPI.getFacts(limit);
+            const data  = res.data.data;
+            const facts = data?.facts || [];
+            const total = data?.total || '?';
+
+            document.getElementById('factSubtitle').textContent =
+                `${total} fakta unik tentang kucing siap kamu temukan!`;
+
+            if (facts.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1">
+                        <div class="empty-state__icon">💭</div>
+                        <div class="empty-state__title">Fakta tidak tersedia</div>
+                        <p class="empty-state__text">Coba muat ulang atau periksa koneksi kamu.</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = facts.map((f, i) => `
+                <div class="fact-card" style="animation:fadeSlideUp 0.35s ease ${i * 0.05}s both;">
+                    <p class="fact-card__text">${f.fact}</p>
+                    <p class="fact-card__len">📏 ${f.length} karakter</p>
+                </div>`
+            ).join('');
+
+        } catch (err) {
+            grid.innerHTML = '';
+            const banner = document.getElementById('errorBanner');
+            banner.textContent = '⚠️ ' + UI.parseError(err);
+            banner.style.display = 'block';
+        } finally {
+            UI.setLoading(refreshBtn, false);
+        }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadFacts);
+    document.getElementById('limitSelect').addEventListener('change', loadFacts);
+
+    loadFacts();
+</script>
+
+<style>
+@keyframes fadeSlideUp {
+    from { opacity:0; transform: translateY(14px); }
+    to   { opacity:1; transform: translateY(0); }
+}
+</style>
+
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — PawTrainer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+<script>Auth.requireAuth();</script>
+<script src="js/navbar.js"></script>
+<script>renderNavbar('dashboard');</script>
+
+<main class="page">
+    <div class="page__header">
+        <h1 class="page__title" id="greeting">Halo! 👋</h1>
+        <p class="page__subtitle">Selamat datang di PawTrainer — platform latihan kucing terbaik.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-card__icon">📚</div>
+            <div class="stat-card__value" id="statTutorials">—</div>
+            <div class="stat-card__label">Total Tutorial</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">❤️</div>
+            <div class="stat-card__value" id="statFavs">—</div>
+            <div class="stat-card__label">Favoritmu</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">🐱</div>
+            <div class="stat-card__value" id="statBreeds">—</div>
+            <div class="stat-card__label">Ras Kucing</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">💡</div>
+            <div class="stat-card__value" id="statFacts">—</div>
+            <div class="stat-card__label">Fakta Unik</div>
+        </div>
+    </div>
+
+    <!-- Tutorial Terbaru -->
+    <div class="section-header">
+        <h2>📖 Tutorial Terbaru</h2>
+        <a href="tutorials.html" class="btn btn--outline btn--sm">Lihat Semua</a>
+    </div>
+
+    <div id="tutorialsContainer" class="grid grid--auto">
+        <!-- Skeleton -->
+        ${[1,2,3].map(() => `
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Cat Fact Preview -->
+    <div class="section-header" style="margin-top:2.5rem;">
+        <h2>💡 Fakta Hari Ini</h2>
+        <a href="catfacts.html" class="btn btn--outline btn--sm">Lihat Semua</a>
+    </div>
+
+    <div id="factPreview" style="max-width:600px;">
+        <div class="skeleton skeleton-line" style="height:60px;border-radius:12px;"></div>
+    </div>
+
+</main>
+
+<script>
+(async () => {
+    const user = Auth.getUser();
+    document.getElementById('greeting').textContent =
+        `Halo, ${user?.name?.split(' ')[0] || 'Pengguna'}! 👋`;
+
+    // Fetch tutorials
+    try {
+        const res  = await TutorialAPI.getAll(1);
+        const data = res.data.data;
+        const tutorials = data.tutorials?.slice(0, 6) || [];
+        const total     = data.pagination?.total || 0;
+
+        document.getElementById('statTutorials').textContent = total;
+
+        const container = document.getElementById('tutorialsContainer');
+        if (tutorials.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="grid-column:1/-1">
+                    <div class="empty-state__icon">📭</div>
+                    <div class="empty-state__title">Belum ada tutorial</div>
+                    <p class="empty-state__text">Minta admin untuk menambah tutorial pertama.</p>
+                </div>`;
+        } else {
+            container.innerHTML = tutorials.map(t => buildTutorialCard(t)).join('');
+        }
+    } catch (err) {
+        document.getElementById('tutorialsContainer').innerHTML =
+            `<div class="alert alert--error" style="grid-column:1/-1">
+                ⚠️ Gagal memuat tutorial: ${UI.parseError(err)}
+             </div>`;
+    }
+
+    // Fetch favorites count
+    try {
+        const res  = await FavoriteAPI.getAll();
+        const favs = res.data.data?.favorites || [];
+        document.getElementById('statFavs').textContent = favs.length;
+    } catch (_) { document.getElementById('statFavs').textContent = '0'; }
+
+    // Fetch breeds count
+    try {
+        const res    = await ExternalAPI.getBreeds();
+        const breeds = res.data.data?.breeds || [];
+        document.getElementById('statBreeds').textContent = res.data.data?.total || breeds.length;
+    } catch (_) { document.getElementById('statBreeds').textContent = '—'; }
+
+    // Fetch cat fact
+    try {
+        const res   = await ExternalAPI.getFacts(1);
+        const facts = res.data.data?.facts || [];
+        document.getElementById('statFacts').textContent = res.data.data?.total || '—';
+
+        const factPreview = document.getElementById('factPreview');
+        if (facts.length > 0) {
+            factPreview.innerHTML = `
+                <div class="fact-card">
+                    <p class="fact-card__text">${facts[0].fact}</p>
+                    <p class="fact-card__len">📏 ${facts[0].length} karakter</p>
+                </div>`;
+        }
+    } catch (_) {}
+})();
+
+function buildTutorialCard(t) {
+    const imgEl = t.image_url
+        ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+           <div class="card__img--placeholder" style="display:none">🐾</div>`
+        : `<div class="card__img--placeholder">🐾</div>`;
+
+    return `
+    <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
+        ${imgEl}
+        <div class="card__body">
+            <div class="card__meta">
+                ${UI.difficultyBadge(t.difficulty)}
+                <span>⏱ ${t.estimated_time} menit</span>
+                <span>${t.category?.name || ''}</span>
+            </div>
+            <h3 class="card__title">${t.title}</h3>
+            <p class="card__excerpt">${t.content || ''}</p>
+            <div class="card__footer">
+                <span>💬 ${t.comments_count || 0}</span>
+                <span>❤️ ${t.favorites_count || 0}</span>
+                <span>${UI.formatDate(t.created_at)}</span>
+            </div>
+        </div>
+    </article>`;
+}
+</script>
+
+</body>
+</html>

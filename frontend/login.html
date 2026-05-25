@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — PawTrainer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-card__logo">
+            <div class="paw-big">🐾</div>
+            <h1>PawTrainer</h1>
+            <p>Platform latihan hewan peliharaan</p>
+        </div>
+
+        <h2>Masuk ke akun kamu</h2>
+
+        <div id="errorAlert" class="alert alert--error" style="display:none;"></div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="kamu@email.com" autocomplete="email">
+            <div class="field-error" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Minimal 8 karakter" autocomplete="current-password">
+            <div class="field-error" id="passwordError"></div>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="loginBtn" style="margin-top:0.5rem;">
+            Masuk
+        </button>
+
+        <p class="auth-card__footer">
+            Belum punya akun? <a href="register.html">Daftar sekarang</a>
+        </p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+    // Redirect jika sudah login
+    if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    const loginBtn = document.getElementById('loginBtn');
+
+    function clearErrors() {
+        document.getElementById('emailError').textContent    = '';
+        document.getElementById('passwordError').textContent = '';
+        document.getElementById('errorAlert').style.display  = 'none';
+    }
+
+    function showValidationErrors(errors) {
+        if (errors.email)    document.getElementById('emailError').textContent    = errors.email[0];
+        if (errors.password) document.getElementById('passwordError').textContent = errors.password[0];
+    }
+
+    loginBtn.addEventListener('click', async () => {
+        clearErrors();
+        const email    = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+            const alert = document.getElementById('errorAlert');
+            alert.textContent = 'Email dan password wajib diisi.';
+            alert.style.display = 'block';
+            return;
+        }
+
+        UI.setLoading(loginBtn, true);
+
+        try {
+            const res  = await AuthAPI.login(email, password);
+            const data = res.data.data;
+            Auth.save(data.token, data.user);
+            window.location.href = 'dashboard.html';
+
+        } catch (err) {
+            UI.setLoading(loginBtn, false);
+            if (err.response?.data?.errors) {
+                showValidationErrors(err.response.data.errors);
+            } else {
+                const alert = document.getElementById('errorAlert');
+                alert.textContent = UI.parseError(err);
+                alert.style.display = 'block';
+            }
+        }
+    });
+
+    // Enter key
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter') loginBtn.click();
+    });
+</script>
+</body>
+</html>

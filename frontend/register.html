@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar — PawTrainer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-card__logo">
+            <div class="paw-big">🐾</div>
+            <h1>PawTrainer</h1>
+            <p>Bergabung dan mulai latih hewan kamu</p>
+        </div>
+
+        <h2>Buat akun baru</h2>
+
+        <div id="errorAlert" class="alert alert--error"   style="display:none;"></div>
+        <div id="successAlert" class="alert alert--success" style="display:none;"></div>
+
+        <div class="form-group">
+            <label for="name">Nama Lengkap</label>
+            <input type="text" id="name" placeholder="Nama kamu" autocomplete="name">
+            <div class="field-error" id="nameError"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="kamu@email.com" autocomplete="email">
+            <div class="field-error" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Minimal 8 karakter" autocomplete="new-password">
+            <div class="field-error" id="passwordError"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="passwordConfirm">Konfirmasi Password</label>
+            <input type="password" id="passwordConfirm" placeholder="Ulangi password" autocomplete="new-password">
+            <div class="field-error" id="passwordConfirmError"></div>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="registerBtn" style="margin-top:0.5rem;">
+            Daftar Sekarang
+        </button>
+
+        <p class="auth-card__footer">
+            Sudah punya akun? <a href="login.html">Masuk di sini</a>
+        </p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+    if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    const registerBtn = document.getElementById('registerBtn');
+
+    function clearErrors() {
+        ['name','email','password','passwordConfirm'].forEach(id => {
+            document.getElementById(id + 'Error').textContent = '';
+        });
+        document.getElementById('errorAlert').style.display   = 'none';
+        document.getElementById('successAlert').style.display = 'none';
+    }
+
+    function showValidationErrors(errors) {
+        const map = {
+            name:                  'nameError',
+            email:                 'emailError',
+            password:              'passwordError',
+            password_confirmation: 'passwordConfirmError'
+        };
+        for (const [key, elId] of Object.entries(map)) {
+            if (errors[key]) document.getElementById(elId).textContent = errors[key][0];
+        }
+    }
+
+    registerBtn.addEventListener('click', async () => {
+        clearErrors();
+        const name            = document.getElementById('name').value.trim();
+        const email           = document.getElementById('email').value.trim();
+        const password        = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('passwordConfirm').value;
+
+        if (password !== passwordConfirm) {
+            document.getElementById('passwordConfirmError').textContent = 'Password tidak cocok.';
+            return;
+        }
+
+        UI.setLoading(registerBtn, true);
+
+        try {
+            const res  = await AuthAPI.register(name, email, password, passwordConfirm);
+            const data = res.data.data;
+            Auth.save(data.token, data.user);
+
+            const successEl = document.getElementById('successAlert');
+            successEl.textContent = '✓ Registrasi berhasil! Mengalihkan...';
+            successEl.style.display = 'block';
+
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+
+        } catch (err) {
+            UI.setLoading(registerBtn, false);
+            if (err.response?.data?.errors) {
+                showValidationErrors(err.response.data.errors);
+            } else {
+                const errorEl = document.getElementById('errorAlert');
+                errorEl.textContent = UI.parseError(err);
+                errorEl.style.display = 'block';
+            }
+        }
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter') registerBtn.click();
+    });
+</script>
+</body>
+</html>

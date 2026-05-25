@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial — PawTrainer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+<script>Auth.requireAuth();</script>
+<script src="js/navbar.js"></script>
+<script>renderNavbar('tutorials');</script>
+
+<main class="page">
+    <div class="page__header">
+        <h1 class="page__title">📚 Tutorial</h1>
+        <p class="page__subtitle">Temukan panduan melatih kucingmu dari para ahli.</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <div class="search-bar" style="flex:1;min-width:200px;max-width:360px;">
+            <span>🔍</span>
+            <input type="text" id="searchInput" placeholder="Cari tutorial...">
+        </div>
+        <select id="difficultyFilter" style="padding:0.55rem 0.9rem;border:1.5px solid var(--sand);border-radius:var(--radius);background:var(--warm-white);font-family:var(--font-body);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;">
+            <option value="">Semua Level</option>
+            <option value="beginner">Pemula</option>
+            <option value="intermediate">Menengah</option>
+            <option value="advanced">Mahir</option>
+        </select>
+        <select id="categoryFilter" style="padding:0.55rem 0.9rem;border:1.5px solid var(--sand);border-radius:var(--radius);background:var(--warm-white);font-family:var(--font-body);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;">
+            <option value="">Semua Kategori</option>
+        </select>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="alert alert--error" style="display:none;"></div>
+
+    <!-- Tutorial Grid -->
+    <div id="tutorialGrid" class="grid grid--auto">
+        <!-- Skeleton cards -->
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination"></div>
+</main>
+
+<script>
+    let currentPage = 1;
+    let allTutorials = [];
+    let pagination = {};
+
+    // Load categories for filter
+    (async () => {
+        try {
+            const res = await CategoryAPI.getAll();
+            const cats = res.data.data?.categories || [];
+            const sel  = document.getElementById('categoryFilter');
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
+        } catch (_) {}
+    })();
+
+    async function loadTutorials(page = 1) {
+        showSkeletons();
+        document.getElementById('errorBanner').style.display = 'none';
+
+        try {
+            const res  = await TutorialAPI.getAll(page);
+            const data = res.data.data;
+            allTutorials = data.tutorials || [];
+            pagination   = data.pagination || {};
+            currentPage  = page;
+            renderTutorials();
+            renderPagination();
+        } catch (err) {
+            document.getElementById('tutorialGrid').innerHTML = '';
+            const banner = document.getElementById('errorBanner');
+            banner.textContent = '⚠️ ' + UI.parseError(err);
+            banner.style.display = 'block';
+        }
+    }
+
+    function renderTutorials() {
+        const search     = document.getElementById('searchInput').value.toLowerCase();
+        const difficulty = document.getElementById('difficultyFilter').value;
+        const category   = document.getElementById('categoryFilter').value;
+
+        let filtered = allTutorials.filter(t => {
+            const matchSearch = !search ||
+                t.title.toLowerCase().includes(search) ||
+                (t.content || '').toLowerCase().includes(search);
+            const matchDiff = !difficulty || t.difficulty === difficulty;
+            const matchCat  = !category  || String(t.category_id) === category;
+            return matchSearch && matchDiff && matchCat;
+        });
+
+        const grid = document.getElementById('tutorialGrid');
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column:1/-1">
+                    <div class="empty-state__icon">🔍</div>
+                    <div class="empty-state__title">Tutorial tidak ditemukan</div>
+                    <p class="empty-state__text">Coba ubah filter atau kata kunci pencarianmu.</p>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(t => `
+            <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
+                ${t.image_url
+                    ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" loading="lazy" onerror="this.outerHTML='<div class=card__img--placeholder>🐾</div>'">`
+                    : `<div class="card__img--placeholder">🐾</div>`}
+                <div class="card__body">
+                    <div class="card__meta">
+                        ${UI.difficultyBadge(t.difficulty)}
+                        <span>⏱ ${t.estimated_time} mnt</span>
+                        <span>${t.category?.name || ''}</span>
+                    </div>
+                    <h3 class="card__title">${t.title}</h3>
+                    <p class="card__excerpt">${t.content || '—'}</p>
+                    <div class="card__footer">
+                        <span>💬 ${t.comments_count || 0} komentar</span>
+                        <span>❤️ ${t.favorites_count || 0}</span>
+                    </div>
+                </div>
+            </article>`
+        ).join('');
+    }
+
+    function renderPagination() {
+        const { current_page, last_page } = pagination;
+        if (!last_page || last_page <= 1) {
+            document.getElementById('pagination').innerHTML = '';
+            return;
+        }
+
+        let html = `
+            <button class="pagination__btn" ${current_page <= 1 ? 'disabled' : ''}
+                onclick="loadTutorials(${current_page - 1})">← Sebelumnya</button>`;
+
+        for (let i = 1; i <= last_page; i++) {
+            if (i === 1 || i === last_page || Math.abs(i - current_page) <= 1) {
+                html += `<button class="pagination__btn ${i === current_page ? 'active' : ''}"
+                    onclick="loadTutorials(${i})">${i}</button>`;
+            } else if (Math.abs(i - current_page) === 2) {
+                html += `<span style="color:var(--text-muted);padding:0 4px;">…</span>`;
+            }
+        }
+
+        html += `<button class="pagination__btn" ${current_page >= last_page ? 'disabled' : ''}
+            onclick="loadTutorials(${current_page + 1})">Berikutnya →</button>`;
+
+        document.getElementById('pagination').innerHTML = html;
+    }
+
+    function showSkeletons() {
+        document.getElementById('tutorialGrid').innerHTML = [1,2,3,4,5,6].map(() => `
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-img"></div>
+                <div class="skeleton skeleton-line" style="width:80%;margin-top:14px;"></div>
+                <div class="skeleton skeleton-line skeleton-line--short"></div>
+                <div class="skeleton skeleton-line" style="width:90%;margin-bottom:12px;"></div>
+            </div>`).join('');
+    }
+
+    // Filter listeners (client-side filter on loaded data)
+    document.getElementById('searchInput').addEventListener('input', renderTutorials);
+    document.getElementById('difficultyFilter').addEventListener('change', renderTutorials);
+    document.getElementById('categoryFilter').addEventListener('change', renderTutorials);
+
+    loadTutorials(1);
+</script>
+
+</body>
+</html>

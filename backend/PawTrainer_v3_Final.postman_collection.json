@@ -1,0 +1,449 @@
+{
+    "info": {
+        "_postman_id": "pawtrainer-collection-v3",
+        "name": "🐾 PawTrainer API v3 — Final",
+        "description": "Koleksi lengkap semua endpoint PawTrainer API.\nIncluding: Auth, Tutorial CRUD, Category, Comment, Favorite, External APIs\n\n**Demo Credentials:**\n- Admin: admin@pawtrainer.com / admin123\n- User: user@pawtrainer.com / user123\n\n**Setup:**\n1. Import collection ini\n2. Import PawTrainer_Env.postman_environment.json\n3. Pilih environment 'PawTrainer Local'\n4. Jalankan 'Login Admin' → token otomatis tersimpan",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000"
+        }
+    ],
+    "item": [
+        {
+            "name": "🔐 AUTH",
+            "item": [
+                {
+                    "name": "1. Register",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.environment.set('token', data.data.token);",
+                                    "    pm.test('Register berhasil', () => pm.response.to.have.status(201));",
+                                    "    console.log('Registered as: ' + data.data.user.email);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Andi Pratama\",\n    \"email\": \"andi@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+                        },
+                        "url": "{{base_url}}/api/auth/register",
+                        "description": "Daftar akun baru. Role default: user."
+                    }
+                },
+                {
+                    "name": "2. Login Admin",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.environment.set('admin_token', data.data.token);",
+                                    "    pm.environment.set('token', data.data.token);",
+                                    "    pm.test('Login berhasil', () => pm.response.to.have.status(200));",
+                                    "    pm.test('Token ada', () => pm.expect(data.data.token).to.not.be.empty);",
+                                    "    console.log('Admin logged in, token saved.');",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@pawtrainer.com\",\n    \"password\": \"admin123\"\n}"
+                        },
+                        "url": "{{base_url}}/api/auth/login",
+                        "description": "Login sebagai admin. Token otomatis disimpan ke environment."
+                    }
+                },
+                {
+                    "name": "3. Login User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.environment.set('user_token', data.data.token);",
+                                    "    pm.test('Login user berhasil', () => pm.response.to.have.status(200));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"user@pawtrainer.com\",\n    \"password\": \"user123\"\n}"
+                        },
+                        "url": "{{base_url}}/api/auth/login"
+                    }
+                },
+                {
+                    "name": "4. Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/profile"
+                    }
+                },
+                {
+                    "name": "5. Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/auth/logout"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📚 TUTORIAL",
+            "item": [
+                {
+                    "name": "List Tutorials",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": {
+                            "raw": "{{base_url}}/api/gateway/tutorials?per_page=5&sort_by=created_at&sort_order=desc",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "gateway", "tutorials"],
+                            "query": [
+                                {"key": "per_page", "value": "5"},
+                                {"key": "sort_by", "value": "created_at"},
+                                {"key": "sort_order", "value": "desc"},
+                                {"key": "category_id", "value": "", "disabled": true},
+                                {"key": "difficulty", "value": "", "disabled": true},
+                                {"key": "search", "value": "", "disabled": true}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Tutorial by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/tutorials/{{tutorial_id}}"
+                    }
+                },
+                {
+                    "name": "Create Tutorial [Admin]",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.environment.set('tutorial_id', data.data.tutorial.id);",
+                                    "    console.log('Created tutorial ID:', data.data.tutorial.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{admin_token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"category_id\": 1,\n    \"title\": \"Mengajarkan Kucing Berjabat Tangan\",\n    \"content\": \"# Pendahuluan\\n\\nMengajarkan kucing berjabat tangan adalah trik yang menggemaskan.\\n\\n## Langkah 1\\nSiapkan camilan kecil sebagai reward.\\n\\n## Langkah 2\\nMinta kucing duduk terlebih dahulu.\\n\\n## Langkah 3\\nSentuh telapak kaki depan kucing sambil ucapkan 'shake'.\",\n    \"difficulty\": \"intermediate\",\n    \"estimated_time\": 20,\n    \"youtube_url\": null,\n    \"image_url\": null\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/tutorials"
+                    }
+                },
+                {
+                    "name": "Update Tutorial [Admin]",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{admin_token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Mengajarkan Kucing Berjabat Tangan (Revisi)\",\n    \"estimated_time\": 25\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/tutorials/{{tutorial_id}}"
+                    }
+                },
+                {
+                    "name": "Delete Tutorial [Admin]",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+                        "url": "{{base_url}}/api/gateway/tutorials/{{tutorial_id}}"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🏷️ CATEGORY",
+            "item": [
+                {
+                    "name": "List Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/categories"
+                    }
+                },
+                {
+                    "name": "Get Category by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/categories/{{category_id}}"
+                    }
+                },
+                {
+                    "name": "Create Category [Admin]",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.environment.set('category_id', pm.response.json().data.category.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{admin_token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Advanced Tricks\",\n    \"description\": \"Trik lanjutan untuk kucing yang sudah terlatih\"\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/categories"
+                    }
+                },
+                {
+                    "name": "Update Category [Admin]",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{admin_token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Advanced Tricks (Updated)\",\n    \"description\": \"Deskripsi diperbarui\"\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/categories/{{category_id}}"
+                    }
+                },
+                {
+                    "name": "Delete Category [Admin]",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+                        "url": "{{base_url}}/api/gateway/categories/{{category_id}}"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "💬 COMMENT",
+            "item": [
+                {
+                    "name": "List Comments on Tutorial",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/tutorials/1/comments"
+                    }
+                },
+                {
+                    "name": "Add Comment",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.environment.set('comment_id', pm.response.json().data.comment.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tutorial_id\": 1,\n    \"body\": \"Tutorial ini sangat membantu! Kucing saya berhasil dalam 3 hari. Terima kasih!\"\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/comments"
+                    }
+                },
+                {
+                    "name": "Delete Comment",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/comments/{{comment_id}}"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "❤️ FAVORITE",
+            "item": [
+                {
+                    "name": "List My Favorites",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/favorites"
+                    }
+                },
+                {
+                    "name": "Toggle Favorite",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tutorial_id\": 1\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/favorites",
+                        "description": "Toggle: tambah jika belum favorit, hapus jika sudah ada."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🐱 EXTERNAL API",
+            "item": [
+                {
+                    "name": "Cat Facts (limit=5)",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": {
+                            "raw": "{{base_url}}/api/gateway/facts?limit=5",
+                            "query": [{"key": "limit", "value": "5"}]
+                        }
+                    }
+                },
+                {
+                    "name": "Cat Breeds",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/breeds"
+                    }
+                },
+                {
+                    "name": "YouTube Videos",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": {
+                            "raw": "{{base_url}}/api/gateway/videos/cara melatih kucing?max_results=3",
+                            "query": [{"key": "max_results", "value": "3"}]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "⚠️ ERROR SCENARIOS",
+            "item": [
+                {
+                    "name": "SCENARIO 10 — User Coba Buat Tutorial (403)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{user_token}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"category_id\": 1,\n    \"title\": \"Ini Seharusnya Ditolak\",\n    \"content\": \"User tidak boleh buat tutorial\",\n    \"difficulty\": \"beginner\",\n    \"estimated_time\": 10\n}"
+                        },
+                        "url": "{{base_url}}/api/gateway/tutorials",
+                        "description": "Harus menghasilkan 403 Forbidden karena user bukan admin."
+                    }
+                },
+                {
+                    "name": "SCENARIO 11 — Register Validation Failed (422)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"\",\n    \"email\": \"ini-bukan-email\",\n    \"password\": \"123\",\n    \"password_confirmation\": \"berbeda123\"\n}"
+                        },
+                        "url": "{{base_url}}/api/auth/register",
+                        "description": "Harus menghasilkan 422 dengan detail errors per field."
+                    }
+                },
+                {
+                    "name": "SCENARIO 12 — No Token (401)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": "{{base_url}}/api/gateway/tutorials",
+                        "description": "Akses tanpa token — harus 401 Unauthorized."
+                    }
+                },
+                {
+                    "name": "SCENARIO 12b — Wrong Token (401)",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer token_palsu_yang_tidak_valid"}],
+                        "url": "{{base_url}}/api/gateway/tutorials",
+                        "description": "Token salah/expired — harus 401."
+                    }
+                },
+                {
+                    "name": "Tutorial Not Found (404)",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": "{{base_url}}/api/gateway/tutorials/99999"
+                    }
+                }
+            ]
+        }
+    ]
+}

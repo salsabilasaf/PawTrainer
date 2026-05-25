@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favorit — PawTrainer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+<script>Auth.requireAuth();</script>
+<script src="js/navbar.js"></script>
+<script>renderNavbar('favorites');</script>
+
+<main class="page">
+    <div class="page__header">
+        <h1 class="page__title">❤️ Tutorial Favoritku</h1>
+        <p class="page__subtitle">Tutorial yang kamu simpan untuk ditonton lagi.</p>
+    </div>
+
+    <div id="errorBanner" class="alert alert--error" style="display:none;"></div>
+
+    <div id="favGrid" class="grid grid--auto">
+        <!-- Skeletons -->
+        ${[1,2,3].map(() => `
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:75%;margin:12px 16px 0;"></div>
+            <div class="skeleton skeleton-line skeleton-line--short" style="margin:8px 16px 12px;"></div>
+        </div>`).join('')}
+    </div>
+</main>
+
+<script>
+async function loadFavorites() {
+    try {
+        const res       = await FavoriteAPI.getAll();
+        const favorites = res.data.data?.favorites || [];
+
+        const grid = document.getElementById('favGrid');
+
+        if (favorites.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column:1/-1">
+                    <div class="empty-state__icon">💔</div>
+                    <div class="empty-state__title">Belum ada favorit</div>
+                    <p class="empty-state__text">
+                        Temukan tutorial yang kamu suka dan tekan ❤️ untuk menyimpannya di sini.
+                    </p>
+                    <a href="tutorials.html" class="btn btn--primary" style="margin-top:1rem;">Jelajahi Tutorial</a>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = favorites.map(f => {
+            const t = f.tutorial || f;   // backend mungkin embed tutorial langsung
+            if (!t || !t.id) return '';
+            return `
+            <article class="card" style="position:relative;">
+                ${t.image_url
+                    ? `<img class="card__img" src="${t.image_url}" alt="${t.title || ''}" loading="lazy"
+                         onerror="this.outerHTML='<div class=card__img--placeholder>🐾</div>'">`
+                    : `<div class="card__img--placeholder">🐾</div>`}
+
+                <!-- Remove button -->
+                <button class="btn btn--ghost btn--sm" title="Hapus dari favorit"
+                    onclick="removeFav(event, ${t.id})"
+                    style="position:absolute;top:0.6rem;right:0.6rem;background:rgba(255,255,255,0.9);
+                           border-radius:50%;width:34px;height:34px;padding:0;font-size:1rem;
+                           box-shadow:0 1px 6px rgba(0,0,0,0.15);">
+                    ❤️
+                </button>
+
+                <div class="card__body" style="cursor:pointer;"
+                    onclick="location.href='tutorial-detail.html?id=${t.id}'">
+                    <div class="card__meta">
+                        ${UI.difficultyBadge(t.difficulty)}
+                        <span>⏱ ${t.estimated_time || '?'} mnt</span>
+                    </div>
+                    <h3 class="card__title">${t.title || '—'}</h3>
+                    <p class="card__excerpt">${t.content || '—'}</p>
+                    <div class="card__footer">
+                        <span>💬 ${t.comments_count || 0}</span>
+                        <span>📅 ${UI.formatDate(t.created_at || f.created_at)}</span>
+                    </div>
+                </div>
+            </article>`;
+        }).join('');
+
+    } catch (err) {
+        const banner = document.getElementById('errorBanner');
+        banner.textContent = '⚠️ ' + UI.parseError(err);
+        banner.style.display = 'block';
+        document.getElementById('favGrid').innerHTML = '';
+    }
+}
+
+async function removeFav(event, tutId) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    btn.textContent = '…';
+    btn.disabled = true;
+
+    try {
+        const res    = await FavoriteAPI.toggle(tutId);
+        const action = res.data.data?.action;
+        if (action === 'removed') {
+            UI.showToast('💔 Dihapus dari favorit', 'success');
+            loadFavorites();
+        } else {
+            UI.showToast('❤️ Tutorial kembali difavoritkan', 'success');
+            loadFavorites();
+        }
+    } catch (err) {
+        btn.textContent = '❤️';
+        btn.disabled    = false;
+        UI.showToast(UI.parseError(err), 'error');
+    }
+}
+
+loadFavorites();
+</script>
+
+</body>
+</html>
