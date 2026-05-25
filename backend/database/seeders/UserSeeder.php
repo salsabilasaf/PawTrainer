@@ -13,13 +13,10 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'user@pawtrainer.com'],
             [
-                'name'     => 'User Demo',
-                'email'    => 'user@pawtrainer.com',
-                'password' => Hash::make('password'),
-                'role'     => 'user',
+                'name' => 'User Demo',
+                'password' => Hash::make('user123'),
+                'role' => 'user',
             ]
         );
-
-        $this->command->info('✅ User seeder selesai: user@pawtrainer.com');
     }
 }

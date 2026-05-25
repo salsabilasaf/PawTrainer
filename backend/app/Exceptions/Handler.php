@@ -9,23 +9,12 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use Tymon\JWTAuth\Exceptions\TokenExpiredException;
-use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
-    /**
-     * Exception yang tidak perlu di-report ke log.
-     */
-    protected $dontReport = [
-        //
-    ];
+    protected $dontReport = [];
 
-    /**
-     * Exception yang tidak perlu di-flash ke session.
-     */
     protected $dontFlash = [
         'current_password',
         'password',
@@ -39,12 +28,8 @@ class Handler extends ExceptionHandler
         });
     }
 
-    /**
-     * Render semua exception ke JSON response yang konsisten.
-     */
     public function render($request, Throwable $e)
     {
-        // Selalu kembalikan JSON untuk API routes
         if ($request->is('api/*') || $request->expectsJson()) {
             return $this->handleApiException($e);
         }
@@ -54,46 +39,31 @@ class Handler extends ExceptionHandler
 
     private function handleApiException(Throwable $e)
     {
-        // ── JWT Exceptions ──────────────────────────────────────────────────
-        if ($e instanceof TokenExpiredException) {
-            return ResponseHelper::unauthorized('Token sudah kadaluarsa, silakan login kembali');
-        }
-
-        if ($e instanceof TokenInvalidException) {
-            return ResponseHelper::unauthorized('Token tidak valid');
-        }
-
-        if ($e instanceof JWTException) {
-            return ResponseHelper::unauthorized('Token tidak ditemukan');
-        }
-
-        // ── Laravel Auth ────────────────────────────────────────────────────
         if ($e instanceof AuthenticationException) {
             return ResponseHelper::unauthorized('Anda harus login terlebih dahulu');
         }
 
-        // ── Validation ──────────────────────────────────────────────────────
         if ($e instanceof ValidationException) {
             return ResponseHelper::validationError($e->errors());
         }
 
-        // ── Model Not Found ─────────────────────────────────────────────────
         if ($e instanceof ModelNotFoundException) {
-            $model = class_basename($e->getModel());
-            return ResponseHelper::notFound("{$model} tidak ditemukan");
+            return ResponseHelper::notFound(class_basename($e->getModel()) . ' tidak ditemukan');
         }
 
-        // ── Route Not Found ─────────────────────────────────────────────────
         if ($e instanceof NotFoundHttpException) {
             return ResponseHelper::notFound('Endpoint tidak ditemukan');
         }
 
-        // ── Method Not Allowed ──────────────────────────────────────────────
         if ($e instanceof MethodNotAllowedHttpException) {
             return ResponseHelper::error('HTTP method tidak diizinkan', null, 405);
         }
 
-        // ── Generic Server Error ────────────────────────────────────────────
+        $status = (int) $e->getCode();
+        if ($status >= 400 && $status < 600) {
+            return ResponseHelper::error($e->getMessage(), null, $status);
+        }
+
         return ResponseHelper::serverError(
             config('app.debug')
                 ? $e->getMessage()

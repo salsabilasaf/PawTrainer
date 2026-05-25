@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
@@ -16,31 +15,17 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'role',
+        'api_token',
     ];
 
     protected $hidden = [
         'password',
+        'api_token',
     ];
 
     protected $casts = [
         'password' => 'hashed',
     ];
-
-    // ─── JWT Interface ────────────────────────────────────────────────────────
-
-    public function getJWTIdentifier(): mixed
-    {
-        return $this->getKey();
-    }
-
-    public function getJWTCustomClaims(): array
-    {
-        return [
-            'role' => $this->role,
-        ];
-    }
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     public function isAdmin(): bool
     {
@@ -51,8 +36,6 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->role === 'user';
     }
-
-    // ─── Relations ────────────────────────────────────────────────────────────
 
     public function comments()
     {

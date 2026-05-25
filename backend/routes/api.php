@@ -31,7 +31,7 @@ Route::prefix('auth')->group(function () {
 // PROTECTED ROUTES — wajib bearer token JWT
 // ════════════════════════════════════════════════════════════════════════════
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('api.token')->group(function () {
 
     // Auth
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -76,4 +76,4 @@ Route::middleware('auth:api')->group(function () {
 
     }); // end gateway
 
-}); // end auth:api
+}); // end api.token
