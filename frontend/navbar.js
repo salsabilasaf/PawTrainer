@@ -7,11 +7,11 @@ function renderNavbar(activePage = '') {
     const user = Auth.getUser();
 
     const navLinks = [
-        { href: 'dashboard.html',  label: '🏠 Dashboard',     id: 'dashboard'  },
-        { href: 'tutorials.html',  label: '📚 Tutorial',      id: 'tutorials'  },
-        { href: 'favorites.html',  label: '❤️ Favorit',       id: 'favorites'  },
-        { href: 'breeds.html',     label: '🐱 Ras Kucing',    id: 'breeds'     },
-        { href: 'catfacts.html',   label: '💡 Fakta Kucing',  id: 'catfacts'   },
+        { href: 'dashboard.html',  label: 'Dashboard',     id: 'dashboard'  },
+        { href: 'tutorials.html',  label: 'Tutorial',      id: 'tutorials'  },
+        { href: 'favorites.html',  label: 'Favorit',       id: 'favorites'  },
+        { href: 'breeds.html',     label: 'Ras Kucing',    id: 'breeds'     },
+        { href: 'catfacts.html',   label: 'Fakta Kucing',  id: 'catfacts'   },
     ];
 
     const linksHtml = navLinks.map(l =>
