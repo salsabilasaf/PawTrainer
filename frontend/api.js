@@ -106,7 +106,16 @@ const TutorialAPI = {
         api.get(`/gateway/tutorials/${id}`),
 
     getComments: (tutorialId) =>
-        api.get(`/gateway/tutorials/${tutorialId}/comments`)
+        api.get(`/gateway/tutorials/${tutorialId}/comments`),
+
+    create: (data) =>
+        api.post('/gateway/tutorials', data),
+
+    update: (id, data) =>
+        api.put(`/gateway/tutorials/${id}`, data),
+
+    delete: (id) =>
+        api.delete(`/gateway/tutorials/${id}`)
 };
 
 // ── Comments ──────────────────────────────────────────────────

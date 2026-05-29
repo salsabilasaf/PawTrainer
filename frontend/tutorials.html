@@ -15,9 +15,12 @@
 <script>renderNavbar('tutorials');</script>
 
 <main class="page">
-    <div class="page__header">
-        <h1 class="page__title">Tutorial</h1>
-        <p class="page__subtitle">Temukan panduan melatih kucingmu dari para ahli.</p>
+    <div class="page__header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+        <div>
+            <h1 class="page__title">Tutorial</h1>
+            <p class="page__subtitle">Temukan panduan melatih kucingmu dari para ahli.</p>
+        </div>
+        <button id="addTutorialBtn" class="btn btn--primary" style="display:none;">+ Tambah Tutorial</button>
     </div>
 
     <!-- Filter Bar -->
@@ -46,6 +49,126 @@
     <div id="pagination" class="pagination"></div>
 </main>
 
+<!-- Modal Tambah Tutorial -->
+<div id="addModal" class="modal">
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2 class="modal__title">Tambah Tutorial</h2>
+            <button class="modal__close" onclick="closeModal('addModal')">&times;</button>
+        </div>
+        <div class="modal__body">
+            <form id="addForm">
+                <div class="form-group">
+                    <label>Judul *</label>
+                    <input type="text" id="addTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Konten *</label>
+                    <textarea id="addContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Level Kesulitan *</label>
+                    <select id="addDifficulty" required>
+                        <option value="">Pilih Level</option>
+                        <option value="beginner">Pemula</option>
+                        <option value="intermediate">Menengah</option>
+                        <option value="advanced">Mahir</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select id="addCategory" required>
+                        <option value="">Pilih Kategori</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Waktu Estimasi (menit) *</label>
+                    <input type="number" id="addTime" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>URL Gambar</label>
+                    <input type="url" id="addImage">
+                </div>
+            </form>
+        </div>
+        <div class="modal__footer">
+            <button class="btn btn--outline" onclick="closeModal('addModal')">Batal</button>
+            <button class="btn btn--primary" id="submitAddBtn" onclick="submitAddTutorial()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Tutorial -->
+<div id="editModal" class="modal">
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2 class="modal__title">Edit Tutorial</h2>
+            <button class="modal__close" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <div class="modal__body">
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>Judul *</label>
+                    <input type="text" id="editTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Konten *</label>
+                    <textarea id="editContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Level Kesulitan *</label>
+                    <select id="editDifficulty" required>
+                        <option value="">Pilih Level</option>
+                        <option value="beginner">Pemula</option>
+                        <option value="intermediate">Menengah</option>
+                        <option value="advanced">Mahir</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select id="editCategory" required>
+                        <option value="">Pilih Kategori</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Waktu Estimasi (menit) *</label>
+                    <input type="number" id="editTime" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>URL Gambar</label>
+                    <input type="url" id="editImage">
+                </div>
+            </form>
+        </div>
+        <div class="modal__footer">
+            <button class="btn btn--outline" onclick="closeModal('editModal')">Batal</button>
+            <button class="btn btn--primary" id="submitEditBtn" onclick="submitEditTutorial()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete Tutorial -->
+<div id="deleteModal" class="modal">
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2 class="modal__title">Hapus Tutorial</h2>
+            <button class="modal__close" onclick="closeModal('deleteModal')">&times;</button>
+        </div>
+        <div class="modal__body">
+            <p style="color:var(--text-secondary);margin-bottom:1rem;">Apakah kamu yakin ingin menghapus tutorial ini? Tindakan ini tidak dapat dibatalkan.</p>
+            <div style="background:var(--cream);padding:1rem;border-radius:var(--radius);border-left:3px solid var(--soft-red);">
+                <strong id="deleteTutorialTitle"></strong>
+            </div>
+        </div>
+        <div class="modal__footer">
+            <input type="hidden" id="deleteId">
+            <button class="btn btn--outline" onclick="closeModal('deleteModal')">Batal</button>
+            <button class="btn btn--danger" id="submitDeleteBtn" onclick="submitDeleteTutorial()">Hapus</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const ICON_CLOCK   = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
 const ICON_COMMENT = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
@@ -56,15 +179,162 @@ let currentPage = 1;
 let allTutorials = [];
 let pagination = {};
 
+// ── Modal Functions ───────────────────────────────────────────
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// Close modal when clicking outside
+['addModal', 'editModal', 'deleteModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+        if (e.target.id === id) closeModal(id);
+    });
+});
+
+// ── Check if user is admin ────────────────────────────────────
+function isAdmin() {
+    const user = Auth.getUser();
+    return user?.role === 'admin';
+}
+
+// Show/hide add button based on role
+if (isAdmin()) {
+    document.getElementById('addTutorialBtn').style.display = 'inline-flex';
+    document.getElementById('addTutorialBtn').addEventListener('click', () => {
+        // Clear form
+        document.getElementById('addForm').reset();
+        openModal('addModal');
+    });
+}
+
+// Create tutorial
+async function submitAddTutorial() {
+    const btn = document.getElementById('submitAddBtn');
+    UI.setLoading(btn, true);
+    
+    try {
+        const formData = {
+            title: document.getElementById('addTitle').value,
+            content: document.getElementById('addContent').value,
+            difficulty: document.getElementById('addDifficulty').value,
+            category_id: parseInt(document.getElementById('addCategory').value),
+            estimated_time: parseInt(document.getElementById('addTime').value),
+            image_url: document.getElementById('addImage').value || null
+        };
+        
+        await TutorialAPI.create(formData);
+        UI.showToast('Tutorial berhasil ditambahkan', 'success');
+        closeModal('addModal');
+        loadTutorials(1);
+    } catch (err) {
+        UI.showToast(UI.parseError(err), 'error');
+    } finally {
+        UI.setLoading(btn, false);
+    }
+}
+
+// Open edit modal with tutorial data
+async function openEditModal(tutorialId) {
+    if (!isAdmin()) return;
+    
+    try {
+        const res = await TutorialAPI.getById(tutorialId);
+        const t = res.data.data;
+        
+        document.getElementById('editId').value = t.id;
+        document.getElementById('editTitle').value = t.title;
+        document.getElementById('editContent').value = t.content;
+        document.getElementById('editDifficulty').value = t.difficulty;
+        document.getElementById('editTime').value = t.estimated_time;
+        document.getElementById('editImage').value = t.image_url || '';
+        document.getElementById('editCategory').value = t.category_id;
+        
+        openModal('editModal');
+    } catch (err) {
+        UI.showToast(UI.parseError(err), 'error');
+    }
+}
+
+// Update tutorial
+async function submitEditTutorial() {
+    const btn = document.getElementById('submitEditBtn');
+    UI.setLoading(btn, true);
+    
+    try {
+        const id = document.getElementById('editId').value;
+        const formData = {
+            title: document.getElementById('editTitle').value,
+            content: document.getElementById('editContent').value,
+            difficulty: document.getElementById('editDifficulty').value,
+            category_id: parseInt(document.getElementById('editCategory').value),
+            estimated_time: parseInt(document.getElementById('editTime').value),
+            image_url: document.getElementById('editImage').value || null
+        };
+        
+        await TutorialAPI.update(id, formData);
+        UI.showToast('Tutorial berhasil diperbarui', 'success');
+        closeModal('editModal');
+        loadTutorials(currentPage);
+    } catch (err) {
+        UI.showToast(UI.parseError(err), 'error');
+    } finally {
+        UI.setLoading(btn, false);
+    }
+}
+
+// Open delete modal
+function openDeleteModal(tutorialId, title) {
+    if (!isAdmin()) return;
+    document.getElementById('deleteId').value = tutorialId;
+    document.getElementById('deleteTutorialTitle').textContent = title;
+    openModal('deleteModal');
+}
+
+// Delete tutorial
+async function submitDeleteTutorial() {
+    const btn = document.getElementById('submitDeleteBtn');
+    UI.setLoading(btn, true);
+    
+    try {
+        const id = document.getElementById('deleteId').value;
+        await TutorialAPI.delete(id);
+        UI.showToast('Tutorial berhasil dihapus', 'success');
+        closeModal('deleteModal');
+        loadTutorials(1);
+    } catch (err) {
+        UI.showToast(UI.parseError(err), 'error');
+    } finally {
+        UI.setLoading(btn, false);
+    }
+}
+
 (async () => {
     try {
         const res = await CategoryAPI.getAll();
         const cats = res.data.data?.categories || [];
-        const sel  = document.getElementById('categoryFilter');
+        
+        // Populate addCategory
+        const addSel = document.getElementById('categoryFilter');
         cats.forEach(c => {
             const opt = document.createElement('option');
             opt.value = c.id; opt.textContent = c.name;
-            sel.appendChild(opt);
+            addSel.appendChild(opt);
+        });
+        
+        // Populate form categories
+        ['addCategory', 'editCategory'].forEach(id => {
+            const sel = document.getElementById(id);
+            sel.innerHTML = '<option value="">Pilih Kategori</option>';
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
         });
     } catch (_) {}
 })();
@@ -117,23 +387,31 @@ function renderTutorials() {
     }
 
     grid.innerHTML = filtered.map(t => `
-        <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
-            ${t.image_url
-                ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" loading="lazy" onerror="this.outerHTML='<div class=card__img--placeholder>${PLACEHOLDER}</div>'">`
-                : `<div class="card__img--placeholder">${PLACEHOLDER}</div>`}
-            <div class="card__body">
-                <div class="card__meta">
-                    ${UI.difficultyBadge(t.difficulty)}
-                    <span class="meta-icon">${ICON_CLOCK} ${t.estimated_time} mnt</span>
-                    <span>${t.category?.name || ''}</span>
-                </div>
-                <h3 class="card__title">${t.title}</h3>
-                <p class="card__excerpt">${t.content || '—'}</p>
-                <div class="card__footer">
-                    <span class="meta-icon">${ICON_COMMENT} ${t.comments_count || 0} komentar</span>
-                    <span class="meta-icon">${ICON_HEART} ${t.favorites_count || 0}</span>
+        <article class="card" style="display:flex;flex-direction:column;">
+            <div onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;flex:1;">
+                ${t.image_url
+                    ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" loading="lazy" onerror="this.outerHTML='<div class=card__img--placeholder>${PLACEHOLDER}</div>'">`
+                    : `<div class="card__img--placeholder">${PLACEHOLDER}</div>`}
+                <div class="card__body">
+                    <div class="card__meta">
+                        ${UI.difficultyBadge(t.difficulty)}
+                        <span class="meta-icon">${ICON_CLOCK} ${t.estimated_time} mnt</span>
+                        <span>${t.category?.name || ''}</span>
+                    </div>
+                    <h3 class="card__title">${t.title}</h3>
+                    <p class="card__excerpt">${t.content || '—'}</p>
+                    <div class="card__footer">
+                        <span class="meta-icon">${ICON_COMMENT} ${t.comments_count || 0} komentar</span>
+                        <span class="meta-icon">${ICON_HEART} ${t.favorites_count || 0}</span>
+                    </div>
                 </div>
             </div>
+            ${isAdmin() ? `
+                <div style="display:flex;gap:0.5rem;padding:0.75rem 1.25rem;border-top:1px solid var(--sand);background:var(--cream);">
+                    <button class="btn btn--sm" style="flex:1;background:var(--tan);color:white;" onclick="openEditModal(${t.id})">Edit</button>
+                    <button class="btn btn--sm btn--danger" style="flex:1;" onclick="openDeleteModal(${t.id}, '${t.title.replace(/'/g, "\\'")}')">Hapus</button>
+                </div>
+            ` : ''}
         </article>`
     ).join('');
 }
