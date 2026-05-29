@@ -3,7 +3,7 @@
 //  Semua HTTP call ke Laravel backend ada di sini
 // ============================================================
 
-const BASE_URL = 'http://localhost:8000/api';   // Ganti sesuai URL backend kamu
+const BASE_URL = 'http://127.0.0.1:8000/api';   // Ganti sesuai URL backend kamu
 
 // ── Axios Instance ────────────────────────────────────────────
 const api = axios.create({
