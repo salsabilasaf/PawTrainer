@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — PawTrainer</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="api.js"></script>
+<script>
+    // Hanya admin yang boleh masuk halaman ini
+    Auth.requireAuth();
+    const _u = Auth.getUser();
+    if (_u?.role !== 'admin') {
+        window.location.replace('dashboard.html');
+    }
+</script>
+<script src="navbar.js"></script>
+<script>renderNavbar('dashboard');</script>
+
+<main class="page">
+    <div class="page__header">
+        <div>
+            <h1 class="page__title" id="greeting">Halo, Admin!</h1>
+            <p class="page__subtitle">Kelola konten PawTrainer dari sini.</p>
+        </div>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn--primary btn--sm" onclick="location.href='tutorials.html'">
+                + Tambah Tutorial
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistik Admin -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-card__value" id="statTutorials">—</div>
+            <div class="stat-card__label">Total Tutorial</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" id="statCategories">—</div>
+            <div class="stat-card__label">Kategori</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" id="statComments">—</div>
+            <div class="stat-card__label">Total Komentar</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" id="statFavs">—</div>
+            <div class="stat-card__label">Total Favorit</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-header" style="margin-top:2.5rem;">
+        <h2>Quick Actions</h2>
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2.5rem;">
+        <button class="btn btn--primary" onclick="location.href='tutorials.html'">
+            📝 Kelola Tutorial
+        </button>
+        <button class="btn btn--outline" id="refreshBtn" onclick="loadDashboard()">
+            🔄 Refresh Data
+        </button>
+    </div>
+
+    <!-- Tutorial Terbaru -->
+    <div class="section-header">
+        <h2>Tutorial Terbaru</h2>
+        <a href="tutorials.html" class="btn btn--outline btn--sm">Kelola Semua</a>
+    </div>
+
+    <div id="tutorialsContainer" class="grid grid--auto">
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>
+    </div>
+
+    <!-- Daftar Kategori -->
+    <div class="section-header" style="margin-top:2.5rem;">
+        <h2>Kategori Aktif</h2>
+    </div>
+
+    <div id="categoriesContainer" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:2.5rem;">
+        <div class="skeleton skeleton-line" style="width:80px;height:32px;border-radius:20px;"></div>
+        <div class="skeleton skeleton-line" style="width:100px;height:32px;border-radius:20px;"></div>
+        <div class="skeleton skeleton-line" style="width:90px;height:32px;border-radius:20px;"></div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="section-header" style="margin-top:2.5rem;">
+        <h2>Activity Log</h2>
+        <span id="activityCount" style="font-size:0.85rem;color:var(--text-muted);"></span>
+    </div>
+
+    <div id="activityLog" style="display:flex;flex-direction:column;gap:0.75rem;max-width:720px;">
+        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
+        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
+        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
+    </div>
+
+</main>
+
+<script>
+async function loadDashboard() {
+    const user = Auth.getUser();
+    document.getElementById('greeting').textContent =
+        `Halo, ${user?.name?.split(' ')[0] || 'Admin'}!`;
+
+    // Reset ke skeleton saat refresh
+    resetSkeletons();
+
+    // Fetch tutorials
+    let tutorials = [];
+    let totalTutorials = 0;
+    let totalComments = 0;
+    try {
+        const res  = await TutorialAPI.getAll(1);
+        const data = res.data.data;
+        tutorials       = data.tutorials || [];
+        totalTutorials  = data.pagination?.total || tutorials.length;
+
+        // Hitung total komentar dari data tutorial yang ada
+        totalComments = tutorials.reduce((sum, t) => sum + (t.comments_count || 0), 0);
+
+        document.getElementById('statTutorials').textContent = totalTutorials;
+        document.getElementById('statComments').textContent  = totalComments;
+
+        renderTutorials(tutorials.slice(0, 6));
+        renderActivityLog(tutorials);
+    } catch (err) {
+        document.getElementById('statTutorials').textContent = '—';
+        document.getElementById('statComments').textContent  = '—';
+        document.getElementById('tutorialsContainer').innerHTML =
+            `<div class="alert alert--error" style="grid-column:1/-1">
+                Gagal memuat tutorial: ${UI.parseError(err)}
+             </div>`;
+        document.getElementById('activityLog').innerHTML =
+            `<div class="alert alert--error">Gagal memuat activity log.</div>`;
+    }
+
+    // Fetch categories
+    try {
+        const res  = await CategoryAPI.getAll();
+        const cats = res.data.data?.categories || [];
+        document.getElementById('statCategories').textContent = cats.length;
+        renderCategories(cats);
+    } catch (_) {
+        document.getElementById('statCategories').textContent = '—';
+        document.getElementById('categoriesContainer').innerHTML =
+            `<span style="color:var(--text-muted);font-size:0.9rem;">Gagal memuat kategori.</span>`;
+    }
+
+    // Fetch total favorites
+    try {
+        const res  = await FavoriteAPI.getAll();
+        const favs = res.data.data?.favorites || [];
+        document.getElementById('statFavs').textContent = favs.length;
+    } catch (_) {
+        document.getElementById('statFavs').textContent = '—';
+    }
+}
+
+function resetSkeletons() {
+    document.getElementById('tutorialsContainer').innerHTML = `
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton skeleton-line" style="width:80%"></div>
+            <div class="skeleton skeleton-line skeleton-line--short"></div>
+        </div>`;
+
+    document.getElementById('activityLog').innerHTML = `
+        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
+        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
+        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>`;
+}
+
+function renderTutorials(tutorials) {
+    const container = document.getElementById('tutorialsContainer');
+    if (tutorials.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column:1/-1">
+                <div class="empty-state__icon">📝</div>
+                <div class="empty-state__title">Belum ada tutorial</div>
+                <p class="empty-state__text">Klik "Tambah Tutorial" untuk membuat tutorial pertama.</p>
+            </div>`;
+        return;
+    }
+    container.innerHTML = tutorials.map(t => `
+    <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
+        ${t.image_url
+            ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+               <div class="card__img--placeholder" style="display:none">🐾</div>`
+            : `<div class="card__img--placeholder">🐾</div>`}
+        <div class="card__body">
+            <div class="card__meta">
+                ${UI.difficultyBadge(t.difficulty)}
+                <span>${t.estimated_time} menit</span>
+                <span>${t.category?.name || ''}</span>
+            </div>
+            <h3 class="card__title">${t.title}</h3>
+            <p class="card__excerpt">${t.content || ''}</p>
+            <div class="card__footer">
+                <span>💬 ${t.comments_count || 0}</span>
+                <span>❤️ ${t.favorites_count || 0}</span>
+                <span>${UI.formatDate(t.created_at)}</span>
+            </div>
+        </div>
+    </article>`).join('');
+}
+
+function renderCategories(categories) {
+    const container = document.getElementById('categoriesContainer');
+    if (categories.length === 0) {
+        container.innerHTML = `<span style="color:var(--text-muted);font-size:0.9rem;">Belum ada kategori.</span>`;
+        return;
+    }
+    container.innerHTML = categories.map(c => `
+        <span class="badge badge--gray" style="padding:0.4rem 1rem;border-radius:20px;font-size:0.85rem;background:var(--sand);color:var(--brown);">
+            ${c.name}
+            ${c.tutorials_count !== undefined ? `<strong style="margin-left:0.4rem;">${c.tutorials_count}</strong>` : ''}
+        </span>`).join('');
+}
+
+function renderActivityLog(tutorials) {
+    const container = document.getElementById('activityLog');
+
+    // Buat activity dari data tutorial yang sudah ada (sorted by created_at desc)
+    const sorted = [...tutorials].sort((a, b) =>
+        new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    if (sorted.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state__title" style="font-size:1rem;">Belum ada aktivitas</div>
+            </div>`;
+        document.getElementById('activityCount').textContent = '';
+        return;
+    }
+
+    document.getElementById('activityCount').textContent =
+        `${sorted.length} entri terbaru`;
+
+    container.innerHTML = sorted.slice(0, 10).map(t => `
+        <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.875rem 1.125rem;
+                    background:var(--warm-white);border:1.5px solid var(--sand);
+                    border-radius:var(--radius);cursor:pointer;"
+             onclick="location.href='tutorial-detail.html?id=${t.id}'">
+            <span style="font-size:1.4rem;line-height:1;">📝</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;color:var(--text-primary);
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    Tutorial dibuat: ${t.title}
+                </div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;display:flex;gap:1rem;">
+                    <span>${t.category?.name || 'Tanpa Kategori'}</span>
+                    <span>${UI.difficultyBadge(t.difficulty)}</span>
+                    <span>${UI.formatDate(t.created_at)}</span>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;
+                        font-size:0.8rem;color:var(--text-muted);flex-shrink:0;">
+                <span>💬 ${t.comments_count || 0}</span>
+                <span>❤️ ${t.favorites_count || 0}</span>
+            </div>
+        </div>`).join('');
+}
+
+// Initial load
+loadDashboard();
+</script>
+
+</body>
+</html>

@@ -5,14 +5,22 @@
 
 function renderNavbar(activePage = '') {
     const user = Auth.getUser();
+    const isAdmin = user?.role === 'admin';
 
-    const navLinks = [
-        { href: 'dashboard.html',  label: '🏠 Dashboard',     id: 'dashboard'  },
-        { href: 'tutorials.html',  label: '📚 Tutorial',      id: 'tutorials'  },
-        { href: 'favorites.html',  label: '❤️ Favorit',       id: 'favorites'  },
-        { href: 'breeds.html',     label: '🐱 Ras Kucing',    id: 'breeds'     },
-        { href: 'catfacts.html',   label: '💡 Fakta Kucing',  id: 'catfacts'   },
+    const userNavLinks = [
+        { href: 'dashboard.html',       label: 'Dashboard',        id: 'dashboard'  },
+        { href: 'tutorials.html',       label: 'Tutorial',         id: 'tutorials'  },
+        { href: 'favorites.html',       label: 'Favorit',          id: 'favorites'  },
+        { href: 'breeds.html',          label: 'Ras Kucing',       id: 'breeds'     },
+        { href: 'catfacts.html',        label: 'Fakta Kucing',     id: 'catfacts'   },
     ];
+
+    const adminNavLinks = [
+        { href: 'admin-dashboard.html', label: 'Dashboard',        id: 'dashboard'  },
+        { href: 'tutorials.html',       label: 'Kelola Tutorial',  id: 'tutorials'  },
+    ];
+
+    const navLinks = isAdmin ? adminNavLinks : userNavLinks;
 
     const linksHtml = navLinks.map(l =>
         `<a href="${l.href}" class="nav-link ${activePage === l.id ? 'active' : ''}">${l.label}</a>`

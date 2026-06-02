@@ -3,7 +3,7 @@
 //  Semua HTTP call ke Laravel backend ada di sini
 // ============================================================
 
-const BASE_URL = 'http://localhost:8000/api';   // Ganti sesuai URL backend kamu
+const BASE_URL = 'http://127.0.0.1:8000/api';   // Ganti sesuai URL backend kamu
 
 // ── Axios Instance ────────────────────────────────────────────
 const api = axios.create({
@@ -70,6 +70,22 @@ const Auth = {
             return false;
         }
         return true;
+    },
+
+    isAdmin() {
+        return this.getUser()?.role === 'admin';
+    },
+
+    requireAdmin() {
+        if (!this.isLoggedIn()) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        if (!this.isAdmin()) {
+            window.location.href = 'dashboard.html';
+            return false;
+        }
+        return true;
     }
 };
 
@@ -106,7 +122,16 @@ const TutorialAPI = {
         api.get(`/gateway/tutorials/${id}`),
 
     getComments: (tutorialId) =>
-        api.get(`/gateway/tutorials/${tutorialId}/comments`)
+        api.get(`/gateway/tutorials/${tutorialId}/comments`),
+
+    create: (data) =>
+        api.post('/gateway/tutorials', data),
+
+    update: (id, data) =>
+        api.put(`/gateway/tutorials/${id}`, data),
+
+    delete: (id) =>
+        api.delete(`/gateway/tutorials/${id}`)
 };
 
 // ── Comments ──────────────────────────────────────────────────
@@ -140,6 +165,24 @@ const ExternalAPI = {
 const CategoryAPI = {
     getAll: () =>
         api.get('/gateway/categories')
+};
+
+// ── Admin ─────────────────────────────────────────────────────
+const AdminAPI = {
+    // Mengambil semua user (memanfaatkan endpoint profile dengan fallback)
+    getAllUsers: () =>
+        api.get('/gateway/users'),
+
+    // Total stats menggunakan endpoint yang sudah ada
+    getTutorialStats: (page = 1) =>
+        api.get(`/gateway/tutorials?page=${page}`),
+
+    getCategoryStats: () =>
+        api.get('/gateway/categories'),
+
+    // Semua komentar (admin bisa lihat semua)
+    getAllComments: (tutorialId) =>
+        api.get(`/gateway/tutorials/${tutorialId}/comments`),
 };
 
 // ============================================================
