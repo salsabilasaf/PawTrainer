@@ -16,7 +16,7 @@
 
 <main class="page">
     <div class="page__header">
-        <h1 class="page__title">❤️ Tutorial Favoritku</h1>
+        <h1 class="page__title">Tutorial Favoritku</h1>
         <p class="page__subtitle">Tutorial yang kamu simpan untuk ditonton lagi.</p>
     </div>
 
@@ -52,10 +52,10 @@ async function loadFavorites() {
         if (favorites.length === 0) {
             grid.innerHTML = `
                 <div class="empty-state" style="grid-column:1/-1">
-                    <div class="empty-state__icon">💔</div>
+                    <div class="empty-state__icon"></div>
                     <div class="empty-state__title">Belum ada favorit</div>
                     <p class="empty-state__text">
-                        Temukan tutorial yang kamu suka dan tekan ❤️ untuk menyimpannya di sini.
+                        Temukan tutorial yang kamu suka dan tekan tombol favorit untuk menyimpannya di sini.
                     </p>
                     <a href="tutorials.html" class="btn btn--primary" style="margin-top:1rem;">Jelajahi Tutorial</a>
                 </div>`;
@@ -69,8 +69,8 @@ async function loadFavorites() {
             <article class="card" style="position:relative;">
                 ${t.image_url
                     ? `<img class="card__img" src="${t.image_url}" alt="${t.title || ''}" loading="lazy"
-                         onerror="this.outerHTML='<div class=card__img--placeholder>🐾</div>'">`
-                    : `<div class="card__img--placeholder">🐾</div>`}
+                         onerror="this.outerHTML='<div class=card__img--placeholder></div>'">`
+                    : `<div class="card__img--placeholder"></div>`}
 
                 <!-- Remove button -->
                 <button class="btn btn--ghost btn--sm" title="Hapus dari favorit"
@@ -78,20 +78,20 @@ async function loadFavorites() {
                     style="position:absolute;top:0.6rem;right:0.6rem;background:rgba(255,255,255,0.9);
                            border-radius:50%;width:34px;height:34px;padding:0;font-size:1rem;
                            box-shadow:0 1px 6px rgba(0,0,0,0.15);">
-                    ❤️
+                    Hapus
                 </button>
 
                 <div class="card__body" style="cursor:pointer;"
                     onclick="location.href='tutorial-detail.html?id=${t.id}'">
                     <div class="card__meta">
                         ${UI.difficultyBadge(t.difficulty)}
-                        <span>⏱ ${t.estimated_time || '?'} mnt</span>
+                        <span>${t.estimated_time || '?'} mnt</span>
                     </div>
                     <h3 class="card__title">${t.title || '—'}</h3>
                     <p class="card__excerpt">${t.content || '—'}</p>
                     <div class="card__footer">
-                        <span>💬 ${t.comments_count || 0}</span>
-                        <span>📅 ${UI.formatDate(t.created_at || f.created_at)}</span>
+                        <span>${t.comments_count || 0}</span>
+                        <span>${UI.formatDate(t.created_at || f.created_at)}</span>
                     </div>
                 </div>
             </article>`;
@@ -99,7 +99,7 @@ async function loadFavorites() {
 
     } catch (err) {
         const banner = document.getElementById('errorBanner');
-        banner.textContent = '⚠️ ' + UI.parseError(err);
+        banner.textContent = '' + UI.parseError(err);
         banner.style.display = 'block';
         document.getElementById('favGrid').innerHTML = '';
     }
@@ -115,14 +115,14 @@ async function removeFav(event, tutId) {
         const res    = await FavoriteAPI.toggle(tutId);
         const action = res.data.data?.action;
         if (action === 'removed') {
-            UI.showToast('💔 Dihapus dari favorit', 'success');
+            UI.showToast(' Dihapus dari favorit', 'success');
             loadFavorites();
         } else {
-            UI.showToast('❤️ Tutorial kembali difavoritkan', 'success');
+            UI.showToast('Tutorial kembali difavoritkan', 'success');
             loadFavorites();
         }
     } catch (err) {
-        btn.textContent = '❤️';
+        btn.textContent = 'Hapus';
         btn.disabled    = false;
         UI.showToast(UI.parseError(err), 'error');
     }

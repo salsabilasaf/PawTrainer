@@ -53,14 +53,14 @@
 
 <main class="page">
     <div class="page__header">
-        <h1 class="page__title">🐱 Breed Explorer</h1>
+        <h1 class="page__title">Breed Explorer</h1>
         <p class="page__subtitle" id="totalBreeds">Menjelajahi semua ras kucing dari seluruh dunia.</p>
     </div>
 
     <!-- Search -->
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
         <div class="search-bar" style="flex:1;min-width:200px;max-width:400px;">
-            <span>🔍</span>
+            <span></span>
             <input type="text" id="searchBreed" placeholder="Cari nama ras...">
         </div>
         <select id="originFilter" style="padding:0.55rem 0.9rem;border:1.5px solid var(--sand);border-radius:var(--radius);background:var(--warm-white);font-family:var(--font-body);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;">
@@ -116,7 +116,7 @@
         } catch (err) {
             document.getElementById('breedGrid').innerHTML = '';
             const banner = document.getElementById('errorBanner');
-            banner.textContent = '⚠️ ' + UI.parseError(err);
+            banner.textContent = '' + UI.parseError(err);
             banner.style.display = 'block';
         }
     }
@@ -140,7 +140,7 @@
         if (filtered.length === 0) {
             grid.innerHTML = `
                 <div class="empty-state" style="grid-column:1/-1">
-                    <div class="empty-state__icon">🐾</div>
+                    <div class="empty-state__icon"></div>
                     <div class="empty-state__title">Ras tidak ditemukan</div>
                     <p class="empty-state__text">Coba ubah kata kunci atau filter asal.</p>
                 </div>`;
@@ -151,12 +151,12 @@
             const temps = (b.temperament || '').split(',').slice(0, 3);
             return `
             <div class="breed-card" onclick="openBreedDetail(${JSON.stringify(b).replace(/"/g, '&quot;')})">
-                <div class="breed-card__name">🐱 ${b.name}</div>
-                <div class="breed-card__origin">📍 ${b.origin || '—'}</div>
+                <div class="breed-card__name">${b.name}</div>
+                <div class="breed-card__origin">${b.origin || '—'}</div>
                 <p class="breed-card__desc">${b.description || '—'}</p>
                 <div class="breed-card__tags">
                     ${temps.map(t => `<span class="breed-tag">${t.trim()}</span>`).join('')}
-                    ${b.life_span ? `<span class="breed-tag">⏳ ${b.life_span} thn</span>` : ''}
+                    ${b.life_span ? `<span class="breed-tag">${b.life_span} thn</span>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -166,10 +166,10 @@
         const modal = document.getElementById('breedModal');
         document.getElementById('modalContent').innerHTML = `
             <h2 style="font-family:var(--font-display);color:var(--dark-brown);margin-bottom:0.25rem;">
-                🐱 ${b.name}
+                ${b.name}
             </h2>
             <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.25rem;">
-                📍 ${b.origin || '—'}
+                ${b.origin || '—'}
             </p>
             <p style="font-size:0.9rem;line-height:1.7;color:var(--text-secondary);margin-bottom:1.5rem;">
                 ${b.description || '—'}
@@ -193,7 +193,7 @@
                 </div>
             </div>
             ${b.wikipedia ? `<a href="${b.wikipedia}" target="_blank" rel="noopener" class="btn btn--outline btn--sm" style="margin-top:1.25rem;">
-                🔗 Baca di Wikipedia
+                Baca di Wikipedia
             </a>` : ''}`;
 
         modal.classList.add('open');

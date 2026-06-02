@@ -28,7 +28,7 @@
 
     <!-- Error state -->
     <div id="errorState" class="empty-state" style="display:none;">
-        <div class="empty-state__icon">⚠️</div>
+        
         <div class="empty-state__title">Tutorial tidak ditemukan</div>
         <p class="empty-state__text" id="errorMsg">Terjadi kesalahan saat memuat tutorial.</p>
         <a href="tutorials.html" class="btn btn--primary" style="margin-top:1rem;">Kembali</a>
@@ -53,7 +53,7 @@
 
                 <!-- Comments -->
                 <div class="section-header" style="margin-top:2rem;">
-                    <h2>💬 Komentar</h2>
+                    <h2>Komentar</h2>
                 </div>
 
                 <!-- Add Comment -->
@@ -75,7 +75,7 @@
                 <div class="sidebar-box">
                     <h3>Aksi</h3>
                     <button class="fav-btn" id="favBtn" style="width:100%;justify-content:center;">
-                        ❤️ Tambah ke Favorit
+                        Tambah ke Favorit
                     </button>
                 </div>
 
@@ -128,11 +128,11 @@
         // Meta
         document.getElementById('tutMeta').innerHTML = `
             ${UI.difficultyBadge(t.difficulty)}
-            <span>⏱ ${t.estimated_time} menit</span>
-            <span>📂 ${t.category?.name || '—'}</span>
-            <span>📅 ${UI.formatDate(t.created_at)}</span>
-            <span>💬 ${t.comments_count || 0} komentar</span>
-            <span>❤️ ${t.favorites_count || 0} favorit</span>`;
+            <span>${t.estimated_time} menit</span>
+            <span>${t.category?.name || '—'}</span>
+            <span>${UI.formatDate(t.created_at)}</span>
+            <span>${t.comments_count || 0} komentar</span>
+            <span>${t.favorites_count || 0} favorit</span>`;
 
         document.getElementById('tutTitle').textContent = t.title;
 
@@ -161,10 +161,10 @@
 
         // Info
         document.getElementById('tutInfo').innerHTML = `
-            <div>📚 <strong>Kategori:</strong> ${t.category?.name || '—'}</div>
-            <div>🎯 <strong>Level:</strong> ${t.difficulty || '—'}</div>
-            <div>⏱ <strong>Durasi:</strong> ${t.estimated_time} menit</div>
-            <div>📅 <strong>Dibuat:</strong> ${UI.formatDate(t.created_at)}</div>`;
+            <div><strong>Kategori:</strong> ${t.category?.name || '—'}</div>
+            <div><strong>Level:</strong> ${t.difficulty || '—'}</div>
+            <div><strong>Durasi:</strong> ${t.estimated_time} menit</div>
+            <div><strong>Dibuat:</strong> ${UI.formatDate(t.created_at)}</div>`;
 
         // Favorite button
         updateFavBtn();
@@ -177,10 +177,10 @@
         const btn = document.getElementById('favBtn');
         if (isFavorite) {
             btn.classList.add('active');
-            btn.innerHTML = '❤️ Hapus dari Favorit';
+            btn.innerHTML = 'Hapus dari Favorit';
         } else {
             btn.classList.remove('active');
-            btn.innerHTML = '🤍 Tambah ke Favorit';
+            btn.innerHTML = 'Tambah ke Favorit';
         }
     }
 
@@ -192,7 +192,7 @@
             const action = res.data.data?.action;
             isFavorite   = (action === 'added');
             updateFavBtn();
-            UI.showToast(isFavorite ? '❤️ Ditambahkan ke favorit!' : '💔 Dihapus dari favorit', 'success');
+            UI.showToast(isFavorite ? 'Ditambahkan ke favorit!' : 'Dihapus dari favorit', 'success');
         } catch (err) {
             UI.showToast(UI.parseError(err), 'error');
         } finally {
@@ -219,7 +219,7 @@
         if (comments.length === 0) {
             container.innerHTML = `
                 <div class="empty-state" style="padding:2rem 1rem;">
-                    <div class="empty-state__icon">💬</div>
+                    
                     <div class="empty-state__title">Belum ada komentar</div>
                     <p class="empty-state__text">Jadilah yang pertama berkomentar!</p>
                 </div>`;
@@ -261,7 +261,7 @@
         try {
             await CommentAPI.add(tutId, text);
             input.value = '';
-            UI.showToast('✓ Komentar berhasil dikirim!', 'success');
+            UI.showToast('Komentar berhasil dikirim!', 'success');
             loadComments();
         } catch (err) {
             UI.showToast(UI.parseError(err), 'error');
