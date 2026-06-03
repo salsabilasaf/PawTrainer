@@ -97,7 +97,7 @@
 
         try {
             const res  = await AuthAPI.register(name, email, password, passwordConfirm);
-            const data = res.data.data;
+            const data = unwrapData(res);
             Auth.save(data.token, data.user);
 
             const successEl = document.getElementById('successAlert');

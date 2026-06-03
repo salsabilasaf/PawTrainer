@@ -45,7 +45,7 @@
 async function loadFavorites() {
     try {
         const res       = await FavoriteAPI.getAll();
-        const favorites = res.data.data?.favorites || [];
+        const favorites = unwrapData(res).favorites || [];
 
         const grid = document.getElementById('favGrid');
 
@@ -113,7 +113,7 @@ async function removeFav(event, tutId) {
 
     try {
         const res    = await FavoriteAPI.toggle(tutId);
-        const action = res.data.data?.action;
+        const action = unwrapData(res).action;
         if (action === 'removed') {
             UI.showToast(' Dihapus dari favorit', 'success');
             loadFavorites();

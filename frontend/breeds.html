@@ -96,7 +96,7 @@
     async function loadBreeds() {
         try {
             const res    = await ExternalAPI.getBreeds();
-            const data   = res.data.data;
+            const data   = unwrapData(res);
             allBreeds    = data?.breeds || [];
             const total  = data?.total || allBreeds.length;
 

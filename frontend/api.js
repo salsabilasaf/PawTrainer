@@ -11,6 +11,10 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
 });
 
+function unwrapData(response) {
+    return response?.data?.data || {};
+}
+
 // ── Request Interceptor — inject Bearer Token ─────────────────
 api.interceptors.request.use(
     config => {

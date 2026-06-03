@@ -76,7 +76,7 @@
 
         try {
             const res  = await AuthAPI.login(email, password);
-            const data = res.data.data;
+            const data = unwrapData(res);
             Auth.save(data.token, data.user);
             window.location.href = 'dashboard.html';
 

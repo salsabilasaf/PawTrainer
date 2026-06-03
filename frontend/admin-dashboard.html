@@ -131,7 +131,7 @@ async function loadDashboard() {
     let totalComments = 0;
     try {
         const res  = await TutorialAPI.getAll(1);
-        const data = res.data.data;
+        const data = unwrapData(res);
         tutorials       = data.tutorials || [];
         totalTutorials  = data.pagination?.total || tutorials.length;
 
@@ -157,7 +157,7 @@ async function loadDashboard() {
     // Fetch categories
     try {
         const res  = await CategoryAPI.getAll();
-        const cats = res.data.data?.categories || [];
+        const cats = unwrapData(res).categories || [];
         document.getElementById('statCategories').textContent = cats.length;
         renderCategories(cats);
     } catch (_) {
@@ -169,7 +169,7 @@ async function loadDashboard() {
     // Fetch total favorites
     try {
         const res  = await FavoriteAPI.getAll();
-        const favs = res.data.data?.favorites || [];
+        const favs = unwrapData(res).favorites || [];
         document.getElementById('statFavs').textContent = favs.length;
     } catch (_) {
         document.getElementById('statFavs').textContent = '—';

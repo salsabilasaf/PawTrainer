@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await AuthAPI.login(email, password);
-            const data = response.data.data;
+            const data = unwrapData(response);
 
             localStorage.setItem('pawtrainer_token', data.token);
             localStorage.setItem('pawtrainer_user', JSON.stringify(data.user));

@@ -96,7 +96,7 @@
     // Fetch tutorials
     try {
         const res  = await TutorialAPI.getAll(1);
-        const data = res.data.data;
+        const data = unwrapData(res);
         const tutorials = data.tutorials?.slice(0, 6) || [];
         const total     = data.pagination?.total || 0;
 
@@ -123,22 +123,24 @@
     // Fetch favorites count
     try {
         const res  = await FavoriteAPI.getAll();
-        const favs = res.data.data?.favorites || [];
+        const favs = unwrapData(res).favorites || [];
         document.getElementById('statFavs').textContent = favs.length;
     } catch (_) { document.getElementById('statFavs').textContent = '0'; }
 
     // Fetch breeds count
     try {
         const res    = await ExternalAPI.getBreeds();
-        const breeds = res.data.data?.breeds || [];
-        document.getElementById('statBreeds').textContent = res.data.data?.total || breeds.length;
+        const data   = unwrapData(res);
+        const breeds = data.breeds || [];
+        document.getElementById('statBreeds').textContent = data.total || breeds.length;
     } catch (_) { document.getElementById('statBreeds').textContent = '—'; }
 
     // Fetch cat fact
     try {
         const res   = await ExternalAPI.getFacts(1);
-        const facts = res.data.data?.facts || [];
-        document.getElementById('statFacts').textContent = res.data.data?.total || '—';
+        const data  = unwrapData(res);
+        const facts = data.facts || [];
+        document.getElementById('statFacts').textContent = data.total || '—';
 
         const factPreview = document.getElementById('factPreview');
         if (facts.length > 0) {

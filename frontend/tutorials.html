@@ -243,7 +243,7 @@ async function openEditModal(tutorialId) {
     
     try {
         const res = await TutorialAPI.getById(tutorialId);
-        const t = res.data.data?.tutorial || res.data.data;
+        const t = unwrapData(res).tutorial;
 
         if (!t) {
             throw new Error('Data tutorial tidak ditemukan.');
@@ -319,7 +319,7 @@ async function submitDeleteTutorial() {
 (async () => {
     try {
         const res = await CategoryAPI.getAll();
-        const cats = res.data.data?.categories || [];
+        const cats = unwrapData(res).categories || [];
         
         // Populate addCategory
         const addSel = document.getElementById('categoryFilter');
@@ -348,7 +348,7 @@ async function loadTutorials(page = 1) {
     document.getElementById('errorBanner').style.display = 'none';
     try {
         const res  = await TutorialAPI.getAll(page);
-        const data = res.data.data;
+        const data = unwrapData(res);
         allTutorials = data.tutorials || [];
         pagination   = data.pagination || {};
         currentPage  = page;

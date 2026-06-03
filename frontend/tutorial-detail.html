@@ -106,9 +106,9 @@
 
             if (tutRes.status === 'rejected') throw tutRes.reason;
 
-            const tutorial = tutRes.value.data.data?.tutorial || tutRes.value.data.data;
+            const tutorial = unwrapData(tutRes.value).tutorial;
             favorites = favRes.status === 'fulfilled'
-                ? (favRes.value.data.data?.favorites || [])
+                ? (unwrapData(favRes.value).favorites || [])
                 : [];
             isFavorite = favorites.some(f => String(f.tutorial_id || f.id) === String(tutId));
 
@@ -189,7 +189,7 @@
         UI.setLoading(btn, true);
         try {
             const res    = await FavoriteAPI.toggle(tutId);
-            const action = res.data.data?.action;
+            const action = unwrapData(res).action;
             isFavorite   = (action === 'added');
             updateFavBtn();
             UI.showToast(isFavorite ? 'Ditambahkan ke favorit!' : 'Dihapus dari favorit', 'success');
@@ -204,7 +204,7 @@
     async function loadComments() {
         try {
             const res      = await TutorialAPI.getComments(tutId);
-            const comments = res.data.data?.comments || [];
+            const comments = unwrapData(res).comments || [];
             renderComments(comments);
         } catch (_) {
             document.getElementById('commentsContainer').innerHTML =
