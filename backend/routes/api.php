@@ -56,16 +56,16 @@ Route::middleware('api.token')->group(function () {
         Route::get('facts',            [ExternalApiController::class, 'catFacts']);
         Route::get('videos/{keyword}', [ExternalApiController::class, 'youtubeVideos']);
 
-        // Admin + User: create/delete comment, toggle favorite
+        // Admin + User: create comment, toggle favorite
         Route::middleware('role:admin,user')->group(function () {
             Route::post('comments',        [CommentController::class,  'store']);
-            Route::delete('comments/{id}', [CommentController::class,  'destroy']);
             Route::post('comments/reply', [CommentController::class, 'store']);
             Route::post('favorites',       [FavoriteController::class, 'store']);
         });
 
-        // Admin Only: CRUD tutorial & category
+        // Admin Only: CRUD tutorial & category, delete comment
         Route::middleware('role:admin')->group(function () {
+            Route::delete('comments/{id}', [CommentController::class,  'destroy']);
             Route::post('tutorials',         [TutorialController::class, 'store']);
             Route::match(['PUT','POST'],'tutorials/{id}', [TutorialController::class, 'update']);
             Route::delete('tutorials/{id}',  [TutorialController::class, 'destroy']);

@@ -19,6 +19,7 @@ class StoreCommentRequest extends FormRequest
     {
         return [
             'tutorial_id' => 'required|integer|exists:tutorials,id',
+            'parent_id'   => 'nullable|integer|exists:comments,id',
             'comment'     => 'required|string|min:3|max:1000',
         ];
     }
@@ -28,6 +29,7 @@ class StoreCommentRequest extends FormRequest
         return [
             'tutorial_id.required' => 'Tutorial ID wajib diisi.',
             'tutorial_id.exists'   => 'Tutorial tidak ditemukan.',
+            'parent_id.exists'     => 'Komentar induk tidak ditemukan.',
             'comment.required'     => 'Komentar tidak boleh kosong.',
             'comment.min'          => 'Komentar minimal 3 karakter.',
             'comment.max'          => 'Komentar maksimal 1000 karakter.',

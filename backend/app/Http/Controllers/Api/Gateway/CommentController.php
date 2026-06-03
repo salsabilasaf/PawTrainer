@@ -44,7 +44,7 @@ class CommentController extends Controller
     public function destroy(int|string $id): JsonResponse
     {
         try {
-            $this->commentService->delete((int) $id, auth()->id(), auth()->user()->role);
+            $this->commentService->delete((int) $id, auth()->user()->role);
 
             return ResponseHelper::success('Success');
         } catch (Exception $e) {

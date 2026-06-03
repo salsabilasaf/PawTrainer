@@ -17,8 +17,9 @@ class ResponseHelper
         return self::success($message, $data, 201);
     }
 
-    public static function error(string $message, mixed $errors = null, int $status = 400): JsonResponse
+    public static function error(string $message, mixed $errors = null, int|string $status = 400): JsonResponse
     {
+        $status = self::normalizeStatus($status);
         $payload = self::payload(false, $message);
 
         if ($errors !== null) {
@@ -65,5 +66,12 @@ class ResponseHelper
         }
 
         return $payload;
+    }
+
+    private static function normalizeStatus(int|string $status): int
+    {
+        $status = (int) $status;
+
+        return $status >= 100 && $status <= 599 ? $status : 400;
     }
 }

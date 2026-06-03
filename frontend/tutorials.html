@@ -243,15 +243,19 @@ async function openEditModal(tutorialId) {
     
     try {
         const res = await TutorialAPI.getById(tutorialId);
-        const t = res.data.data;
+        const t = res.data.data?.tutorial || res.data.data;
+
+        if (!t) {
+            throw new Error('Data tutorial tidak ditemukan.');
+        }
         
-        document.getElementById('editId').value = t.id;
-        document.getElementById('editTitle').value = t.title;
-        document.getElementById('editContent').value = t.content;
-        document.getElementById('editDifficulty').value = t.difficulty;
-        document.getElementById('editTime').value = t.estimated_time;
+        document.getElementById('editId').value = t.id || '';
+        document.getElementById('editTitle').value = t.title || '';
+        document.getElementById('editContent').value = t.content || '';
+        document.getElementById('editDifficulty').value = t.difficulty || '';
+        document.getElementById('editTime').value = t.estimated_time || '';
         document.getElementById('editImage').value = t.image_url || '';
-        document.getElementById('editCategory').value = t.category_id;
+        document.getElementById('editCategory').value = t.category_id || '';
         
         openModal('editModal');
     } catch (err) {

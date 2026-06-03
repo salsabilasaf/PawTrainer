@@ -228,7 +228,7 @@
 
         container.innerHTML = comments.map(c => {
             const initials = c.user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
-            const isOwner  = String(c.user_id) === String(currentUser?.id);
+            const canDelete = currentUser?.role === 'admin';
             return `
                 <div class="comment" id="comment-${c.id}">
                     <div class="comment__avatar">${initials}</div>
@@ -237,7 +237,7 @@
                             <span class="comment__author">${c.user?.name || 'Pengguna'}</span>
                             <div style="display:flex;align-items:center;gap:0.5rem;">
                                 <span class="comment__time">${UI.formatDate(c.created_at)}</span>
-                                ${isOwner ? `<button class="btn btn--ghost btn--sm" style="font-size:0.78rem;color:var(--soft-red);"
+                                ${canDelete ? `<button class="btn btn--ghost btn--sm" style="font-size:0.78rem;color:var(--soft-red);"
                                     onclick="deleteComment(${c.id})">Hapus</button>` : ''}
                             </div>
                         </div>

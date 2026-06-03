@@ -17,21 +17,26 @@ class CommentService
             throw new Exception('Hanya admin yang dapat membalas komentar.', 403);
         }
 
-        $comment = Comment::create([
+        $payload = [
             'user_id' => $userId,
             'tutorial_id' => $data['tutorial_id'],
-            'parent_id' => $data['parent_id'] ?? null,
             'comment' => $data['comment'],
-        ]);
+        ];
+
+        if (!empty($data['parent_id'])) {
+            $payload['parent_id'] = $data['parent_id'];
+        }
+
+        $comment = Comment::create($payload);
 
         return $comment->load('user:id,name');
     }
 
-    public function delete(int $commentId, int $userId, string $role): void
+    public function delete(int $commentId, string $role): void
     {
         $comment = Comment::findOrFail($commentId);
 
-        if ($role !== 'admin' && $comment->user_id !== $userId) {
+        if ($role !== 'admin') {
             throw new Exception('Anda tidak memiliki izin untuk menghapus komentar ini.', 403);
         }
 
