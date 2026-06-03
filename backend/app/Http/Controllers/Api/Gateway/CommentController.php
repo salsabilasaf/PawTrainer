@@ -6,62 +6,49 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comment\StoreCommentRequest;
 use App\Services\CommentService;
+use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    public function __construct(
-        private readonly CommentService $commentService
-    ) {}
+    public function __construct(private readonly CommentService $commentService) {}
 
-    /**
-     * GET /api/gateway/tutorials/{tutorialId}/comments
-     * Akses: admin, user
-     */
-    public function index(int $tutorialId): JsonResponse
+    public function index(int|string $tutorialId): JsonResponse
     {
-        $comments = $this->commentService->getByTutorial($tutorialId);
+        try {
+            $comments = $this->commentService->getByTutorial((int) $tutorialId);
 
-        return ResponseHelper::success('Daftar komentar berhasil diambil', [
-            'comments'   => $comments->items(),
-            'pagination' => [
-                'current_page' => $comments->currentPage(),
-                'per_page'     => $comments->perPage(),
-                'total'        => $comments->total(),
-                'last_page'    => $comments->lastPage(),
-            ],
-        ]);
+            return ResponseHelper::success('Success', [
+                'comments' => $comments->items(),
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), [], 400);
+        }
     }
 
-    /**
-     * POST /api/gateway/comments
-     * Akses: admin, user
-     */
     public function store(StoreCommentRequest $request): JsonResponse
     {
-        $comment = $this->commentService->create(
-            auth()->id(),
-            $request->validated()
-        );
+        try {
+            $comment = $this->commentService->create(
+                auth()->id(),
+                $request->validated(),
+                auth()->user()->role
+            );
 
-        return ResponseHelper::created('Komentar berhasil ditambahkan', [
-            'comment' => $comment,
-        ]);
+            return ResponseHelper::created('Success', ['comment' => $comment]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), [], $e->getCode() ?: 400);
+        }
     }
 
-    /**
-     * DELETE /api/gateway/comments/{id}
-     * Akses: admin (hapus siapapun), user (hanya milik sendiri)
-     */
-    public function destroy(int $id): JsonResponse
+    public function destroy(int|string $id): JsonResponse
     {
-        $this->commentService->delete(
-            $id,
-            auth()->id(),
-            auth()->user()->role
-        );
+        try {
+            $this->commentService->delete((int) $id, auth()->id(), auth()->user()->role);
 
-        return ResponseHelper::success('Komentar berhasil dihapus');
+            return ResponseHelper::success('Success');
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), [], $e->getCode() ?: 400);
+        }
     }
 }

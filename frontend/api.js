@@ -128,7 +128,7 @@ const TutorialAPI = {
         api.post('/gateway/tutorials', data),
 
     update: (id, data) =>
-        api.put(`/gateway/tutorials/${id}`, data),
+        api.put(`/gateway/tutorials/${parseInt(id)}`, data),
 
     delete: (id) =>
         api.delete(`/gateway/tutorials/${id}`)
@@ -136,8 +136,8 @@ const TutorialAPI = {
 
 // ── Comments ──────────────────────────────────────────────────
 const CommentAPI = {
-    add: (tutorialId, comment) =>
-        api.post('/gateway/comments', { tutorial_id: tutorialId, comment }),
+    add: (tutorialId, comment, parentId = null) =>
+        api.post('/gateway/comments', { tutorial_id: parseInt(tutorialId), parent_id: parentId, comment }),
 
     delete: (id) =>
         api.delete(`/gateway/comments/${id}`)

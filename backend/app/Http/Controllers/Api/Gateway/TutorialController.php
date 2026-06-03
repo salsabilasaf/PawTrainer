@@ -72,9 +72,9 @@ class TutorialController extends Controller
      * PUT /api/gateway/tutorials/{id}
      * Akses: admin only
      */
-    public function update(UpdateTutorialRequest $request, int $id): JsonResponse
+    public function update(UpdateTutorialRequest $request, int|string $id): JsonResponse
     {
-        $tutorial = $this->tutorialService->update($id, $request->validated());
+        $tutorial = $this->tutorialService->update((int) $id, $request->validated());
 
         return ResponseHelper::success('Tutorial berhasil diperbarui', [
             'tutorial' => $tutorial,

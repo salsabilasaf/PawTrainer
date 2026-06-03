@@ -60,13 +60,14 @@ Route::middleware('api.token')->group(function () {
         Route::middleware('role:admin,user')->group(function () {
             Route::post('comments',        [CommentController::class,  'store']);
             Route::delete('comments/{id}', [CommentController::class,  'destroy']);
+            Route::post('comments/reply', [CommentController::class, 'store']);
             Route::post('favorites',       [FavoriteController::class, 'store']);
         });
 
         // Admin Only: CRUD tutorial & category
         Route::middleware('role:admin')->group(function () {
             Route::post('tutorials',         [TutorialController::class, 'store']);
-            Route::put('tutorials/{id}',     [TutorialController::class, 'update']);
+            Route::match(['PUT','POST'],'tutorials/{id}', [TutorialController::class, 'update']);
             Route::delete('tutorials/{id}',  [TutorialController::class, 'destroy']);
 
             Route::post('categories',        [CategoryController::class, 'store']);
