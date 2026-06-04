@@ -9,7 +9,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -32,10 +31,12 @@ class AuthController extends Controller
             'role' => 'user',
         ]);
 
-        $token = $this->issueToken($user);
+        $token = auth('api')->login($user);
 
         return ResponseHelper::created('Registrasi berhasil', [
             'token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => $this->formatUser($user),
         ]);
     }
@@ -51,27 +52,26 @@ class AuthController extends Controller
             return ResponseHelper::validationError($validator->errors());
         }
 
-        $user = User::where('email', $request->email)->first();
+        $credentials = $request->only('email', 'password');
+        $token = auth('api')->attempt($credentials);
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$token) {
             return ResponseHelper::unauthorized('Email atau password salah');
         }
 
-        $token = $this->issueToken($user);
+        $user = auth('api')->user();
 
         return ResponseHelper::success('Login berhasil', [
             'token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => null,
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => $this->formatUser($user),
         ]);
     }
 
     public function logout(): JsonResponse
     {
-        if ($user = auth()->user()) {
-            $user->forceFill(['api_token' => null])->save();
-        }
+        auth('api')->logout();
 
         return ResponseHelper::success('Logout berhasil');
     }
@@ -79,19 +79,8 @@ class AuthController extends Controller
     public function profile(): JsonResponse
     {
         return ResponseHelper::success('Data profil berhasil diambil', [
-            'user' => $this->formatUser(auth()->user()),
+            'user' => $this->formatUser(auth('api')->user()),
         ]);
-    }
-
-    private function issueToken(User $user): string
-    {
-        $token = Str::random(80);
-
-        $user->forceFill([
-            'api_token' => Hash::make($token),
-        ])->save();
-
-        return $token;
     }
 
     private function formatUser(User $user): array

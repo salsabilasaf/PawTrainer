@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola User — PawTrainer</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="api.js"></script>
+
+<script>
+Auth.requireAuth();
+
+const _u = Auth.getUser();
+
+if (_u?.role !== 'admin') {
+    location.href = 'dashboard.html';
+}
+</script>
+
+<script src="navbar.js"></script>
+<script>
+renderNavbar('users');
+</script>
+
+<main class="page">
+    <div class="page__header">
+        <div>
+            <h1 class="page__title">Kelola User</h1>
+            <p class="page__subtitle">
+                Kelola akun pengguna PawTrainer.
+            </p>
+        </div>
+    </div>
+
+    <div class="user-stats" id="userStats"></div>
+
+    <div class="user-search">
+        <input
+            type="text"
+            id="searchUser"
+            placeholder="Cari nama atau email..."
+        >
+    </div>
+
+    <div id="usersContainer">
+        Loading...
+    </div>
+</main>
+<script>
+let allUsers = [];
+
+async function loadUsers() {
+    try {
+
+        const res = await AdminAPI.getAllUsers();
+
+        allUsers = res.data.data.users || [];
+
+        renderStats(allUsers);
+        renderUsers(allUsers);
+
+    } catch (err) {
+
+        UI.showToast(
+            UI.parseError(err),
+            'error'
+        );
+    }
+}
+
+function renderStats(users) {
+
+    const totalUsers =
+        users.filter(u => u.role === 'user').length;
+
+    const totalAdmins =
+        users.filter(u => u.role === 'admin').length;
+
+    document.getElementById('userStats').innerHTML = `
+        <div class="stat-card">
+            <h3>${users.length}</h3>
+            <p>Total Akun</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>${totalUsers}</h3>
+            <p>User</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>${totalAdmins}</h3>
+            <p>Admin</p>
+        </div>
+    `;
+}
+
+function renderUsers(users) {
+
+    const currentUser = Auth.getUser();
+
+    const container =
+        document.getElementById('usersContainer');
+
+    if (!users.length) {
+        container.innerHTML =
+            '<p>Tidak ada user ditemukan.</p>';
+        return;
+    }
+
+    container.innerHTML = users.map(user => `
+        <div class="user-card">
+
+    <div class="user-left">
+
+        <div class="user-top">
+
+            <h3>${user.name}</h3>
+
+            <span class="
+                role-badge
+                ${user.role === 'admin'
+                    ? 'role-admin'
+                    : 'role-user'}
+            ">
+                ${user.role === 'admin'
+                    ? 'Admin'
+                    : 'User'}
+            </span>
+
+        </div>
+
+        <p>${user.email}</p>
+
+    </div>
+
+    <div class="user-actions">
+
+        ${
+            user.id !== currentUser.id
+            ? `
+                <button
+                    class="btn btn--danger btn--small"
+                    onclick="deleteUser(${user.id})">
+                    Hapus
+                </button>
+            `
+            : `
+                <span class="self-badge">
+                    Akun Saya
+                </span>
+            `
+        }
+
+    </div>
+
+</div>
+    `).join('');
+}
+
+async function deleteUser(id) {
+
+    if (!confirm('Hapus user ini?')) {
+        return;
+    }
+
+    try {
+
+        await AdminAPI.deleteUser(id);
+
+        UI.showToast(
+            'User berhasil dihapus',
+            'success'
+        );
+
+        loadUsers();
+
+    } catch (err) {
+
+        UI.showToast(
+            UI.parseError(err),
+            'error'
+        );
+    }
+}
+
+document
+.getElementById('searchUser')
+.addEventListener('input', e => {
+
+    const keyword =
+        e.target.value.toLowerCase();
+
+    const filtered =
+        allUsers.filter(user =>
+
+            user.name
+                .toLowerCase()
+                .includes(keyword)
+
+            ||
+
+            user.email
+                .toLowerCase()
+                .includes(keyword)
+        );
+
+    renderUsers(filtered);
+});
+
+loadUsers();
+</script>
+</body>
+</html>

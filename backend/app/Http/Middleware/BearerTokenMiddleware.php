@@ -3,32 +3,34 @@
 namespace App\Http\Middleware;
 
 use App\Helpers\ResponseHelper;
-use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Symfony\Component\HttpFoundation\Response;
 
 class BearerTokenMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken();
+        try {
+            if (!$request->bearerToken()) {
+                return ResponseHelper::unauthorized('Token tidak ditemukan');
+            }
 
-        if (!$token) {
-            return ResponseHelper::unauthorized('Token tidak ditemukan');
-        }
+            $user = JWTAuth::parseToken()->authenticate();
 
-        $users = User::whereNotNull('api_token')->get();
-        $user = $users->first(fn (User $candidate) => Hash::check($token, $candidate->api_token));
+            if (!$user) {
+                return ResponseHelper::unauthorized('Token tidak valid atau sudah kadaluarsa');
+            }
 
-        if (!$user) {
+            Auth::shouldUse('api');
+            Auth::setUser($user);
+            $request->setUserResolver(fn () => $user);
+        } catch (JWTException $e) {
             return ResponseHelper::unauthorized('Token tidak valid atau sudah kadaluarsa');
         }
-
-        Auth::setUser($user);
-        $request->setUserResolver(fn () => $user);
 
         return $next($request);
     }

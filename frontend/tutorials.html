@@ -350,6 +350,14 @@ async function loadTutorials(page = 1) {
         const res  = await TutorialAPI.getAll(page);
         const data = unwrapData(res);
         allTutorials = data.tutorials || [];
+        const params = new URLSearchParams(window.location.search);
+const categoryId = params.get('category_id');
+
+if (categoryId) {
+    allTutorials = allTutorials.filter(
+        t => t.category_id == categoryId
+    );
+}
         pagination   = data.pagination || {};
         currentPage  = page;
         renderTutorials();

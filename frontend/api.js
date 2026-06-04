@@ -100,7 +100,7 @@ const Auth = {
 // ── Auth ──────────────────────────────────────────────────────
 const AuthAPI = {
     register: (name, email, password, passwordConfirmation) =>
-        api.post('/auth/register', {
+        api.post('/register', {
             name,
             email,
             password,
@@ -108,10 +108,10 @@ const AuthAPI = {
         }),
 
     login: (email, password) =>
-        api.post('/auth/login', { email, password }),
+        api.post('/login', { email, password }),
 
     logout: () =>
-        api.post('/auth/logout'),
+        api.post('/logout'),
 
     profile: () =>
         api.get('/profile')
@@ -162,31 +162,52 @@ const ExternalAPI = {
         api.get('/gateway/breeds'),
 
     getFacts: (limit = 5) =>
-        api.get(`/gateway/facts?limit=${limit}`)
+        api.get(`/gateway/facts?limit=${limit}`),
+
+    getVideos: (keyword, maxResults = 5) =>
+        api.get(`/gateway/videos/${encodeURIComponent(keyword)}?max_results=${maxResults}`)
 };
 
 // ── Categories ────────────────────────────────────────────────
 const CategoryAPI = {
     getAll: () =>
-        api.get('/gateway/categories')
+        api.get('/gateway/categories'),
+
+    create: (data) =>
+        api.post('/gateway/categories', data),
+
+    update: (id, data) =>
+        api.put(`/gateway/categories/${id}`, data),
+
+    delete: (id) =>
+        api.delete(`/gateway/categories/${id}`)
 };
 
 // ── Admin ─────────────────────────────────────────────────────
 const AdminAPI = {
-    // Mengambil semua user (memanfaatkan endpoint profile dengan fallback)
+    getStats: () =>
+        api.get('/gateway/admin/stats'),
+
+    getActivityLog: () =>
+        api.get('/gateway/admin/activity-log'),
+
+    getAllComments: (page = 1) =>
+        api.get(`/gateway/admin/comments?page=${page}`),
+
     getAllUsers: () =>
         api.get('/gateway/users'),
 
-    // Total stats menggunakan endpoint yang sudah ada
+    updateUser: (id, data) =>
+        api.put(`/gateway/users/${id}`, data),
+
+    deleteUser: (id) =>
+        api.delete(`/gateway/users/${id}`),
+
     getTutorialStats: (page = 1) =>
         api.get(`/gateway/tutorials?page=${page}`),
 
     getCategoryStats: () =>
-        api.get('/gateway/categories'),
-
-    // Semua komentar (admin bisa lihat semua)
-    getAllComments: (tutorialId) =>
-        api.get(`/gateway/tutorials/${tutorialId}/comments`),
+        api.get('/gateway/categories')
 };
 
 // ============================================================

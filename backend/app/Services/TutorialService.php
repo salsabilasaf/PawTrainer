@@ -60,19 +60,46 @@ class TutorialService
      * Buat tutorial baru. Hanya admin.
      */
     public function create(array $data): Tutorial
-    {
-        return Tutorial::create($data);
+{
+    dd('MASUK CREATE');
+
+    return Tutorial::create($data);
+}
+    public function update(int $id, array $data): Tutorial
+{
+    $tutorial = Tutorial::findOrFail($id);
+
+    if (
+        isset($data['title']) &&
+        $data['title'] !== $tutorial->title
+    ) {
+
+        try {
+
+            $youtube =
+                app(\App\Services\ExternalApiService::class)
+                    ->searchYouTubeVideos(
+                        $data['title'] . ' cat training',
+                        1
+                    );
+
+            if (!empty($youtube['videos'][0])) {
+
+                $data['youtube_url'] =
+                    $youtube['videos'][0]['url'];
+
+                $data['image_url'] =
+                    $youtube['videos'][0]['thumbnail'];
+            }
+
+        } catch (\Exception $e) {
+        }
     }
 
-    /**
-     * Update tutorial by ID. Hanya admin.
-     */
-    public function update(int $id, array $data): Tutorial
-    {
-        $tutorial = Tutorial::findOrFail($id);
-        $tutorial->update($data);
-        return $tutorial->fresh(['category:id,name']);
-    }
+    $tutorial->update($data);
+
+    return $tutorial->fresh(['category:id,name']);
+}
 
     /**
      * Hapus tutorial by ID. Hanya admin.

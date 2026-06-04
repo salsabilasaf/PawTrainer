@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Kategori — PawTrainer</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="api.js"></script>
+
+<script>
+Auth.requireAuth();
+
+const _u = Auth.getUser();
+
+if (_u?.role !== 'admin') {
+    location.href = 'dashboard.html';
+}
+</script>
+
+<script src="navbar.js"></script>
+<script>
+renderNavbar('categories');
+</script>
+
+<main class="page">
+    <div class="page__header">
+        <div>
+            <h1 class="page__title">Kelola Kategori</h1>
+            <p class="page__subtitle">
+                Tambah, edit, dan hapus kategori tutorial.
+            </p>
+        </div>
+    </div>
+
+<div class="category-form">
+    <input
+        type="text"
+        id="categoryName"
+        placeholder="Contoh: Grooming"
+    >
+
+    <button
+        class="btn btn--primary"
+        id="addCategoryBtn">
+        Tambah
+    </button>
+</div>
+
+<div id="categoriesContainer"></div>
+</main>
+<script>
+async function loadCategories() {
+    try {
+        const [categoryRes, tutorialRes] = await Promise.all([
+    CategoryAPI.getAll(),
+    TutorialAPI.getAll()
+]);
+
+const categories =
+    categoryRes.data.data.categories || [];
+
+const tutorials =
+    tutorialRes.data.data.tutorials || [];
+
+        const container =
+            document.getElementById('categoriesContainer');
+
+        if (!categories.length) {
+            container.innerHTML =
+                '<p>Belum ada kategori.</p>';
+            return;
+        }
+
+        container.innerHTML = categories.map(cat => {
+
+    const categoryTutorials =
+        tutorials.filter(
+            t => t.category_id === cat.id
+        );
+
+    return `
+        <div class="category-card">
+
+            <div class="category-info">
+
+                <h3>${cat.name}</h3>
+
+
+                <div class="category-meta">
+    ${cat.tutorials_count || 0} tutorial
+</div>
+
+            </div>
+
+            <div class="category-actions">
+
+                <button
+                    class="btn btn--outline"
+                    onclick="viewCategoryTutorials(${cat.id})">
+                    Lihat Tutorial
+                </button>
+
+                <button
+                    class="btn btn--outline"
+                    onclick="editCategory(${cat.id}, '${cat.name}')">
+                    Edit
+                </button>
+
+                <button
+                    class="btn btn--danger"
+                    onclick="deleteCategory(${cat.id})">
+                    Hapus
+                </button>
+
+            </div>
+
+        </div>
+    `;
+}).join('');
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function addCategory() {
+    const name =
+        document.getElementById('categoryName')
+        .value
+        .trim();
+
+    if (!name) return;
+
+    try {
+        await CategoryAPI.create({
+            name
+        });
+
+        document.getElementById('categoryName').value = '';
+
+        UI.showToast('Kategori berhasil ditambahkan', 'success');
+
+        loadCategories();
+
+    } catch (err) {
+        UI.showToast(UI.parseError(err), 'error');
+    }
+}
+
+async function editCategory(id, oldName) {
+    const name =
+        prompt('Ubah nama kategori:', oldName);
+
+    if (!name) return;
+
+    try {
+        await CategoryAPI.update(id, {
+            name
+        });
+
+        UI.showToast('Kategori berhasil diubah', 'success');
+
+        loadCategories();
+
+    } catch (err) {
+        UI.showToast(UI.parseError(err), 'error');
+    }
+}
+
+async function deleteCategory(id) {
+
+    if (!confirm('Hapus kategori ini?')) {
+        return;
+    }
+
+    try {
+
+        await CategoryAPI.delete(id);
+
+        UI.showToast('Kategori berhasil dihapus', 'success');
+
+        loadCategories();
+
+    } catch (err) {
+
+        UI.showToast(UI.parseError(err), 'error');
+    }
+}
+
+function viewCategoryTutorials(categoryId) {
+    window.location.href =
+        `tutorials.html?category_id=${categoryId}`;
+}
+
+document
+    .getElementById('addCategoryBtn')
+    .addEventListener('click', addCategory);
+
+loadCategories();
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\Gateway\CategoryController;
 use App\Http\Controllers\Api\Gateway\CommentController;
 use App\Http\Controllers\Api\Gateway\ExternalApiController;
@@ -22,6 +23,9 @@ use Illuminate\Support\Facades\Route;
 // PUBLIC ROUTES — tidak perlu token
 // ════════════════════════════════════════════════════════════════════════════
 
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login',    [AuthController::class, 'login']);
+
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
@@ -34,6 +38,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('api.token')->group(function () {
 
     // Auth
+    Route::post('/logout',      [AuthController::class, 'logout']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/profile',      [AuthController::class, 'profile']);
 
@@ -65,6 +70,13 @@ Route::middleware('api.token')->group(function () {
 
         // Admin Only: CRUD tutorial & category, delete comment
         Route::middleware('role:admin')->group(function () {
+            Route::get('admin/stats',        [AdminController::class, 'stats']);
+            Route::get('admin/comments',     [AdminController::class, 'comments']);
+            Route::get('admin/activity-log', [AdminController::class, 'activityLog']);
+            Route::get('users',              [AdminController::class, 'users']);
+            Route::put('users/{id}',         [AdminController::class, 'updateUser']);
+            Route::delete('users/{id}',      [AdminController::class, 'destroyUser']);
+
             Route::delete('comments/{id}', [CommentController::class,  'destroy']);
             Route::post('tutorials',         [TutorialController::class, 'store']);
             Route::match(['PUT','POST'],'tutorials/{id}', [TutorialController::class, 'update']);

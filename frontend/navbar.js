@@ -16,9 +16,11 @@ function renderNavbar(activePage = '') {
     ];
 
     const adminNavLinks = [
-        { href: 'admin-dashboard.html', label: 'Dashboard',        id: 'dashboard'  },
-        { href: 'tutorials.html',       label: 'Kelola Tutorial',  id: 'tutorials'  },
-    ];
+    { href: 'admin-dashboard.html',  label: 'Dashboard',        id: 'dashboard'  },
+    { href: 'tutorials.html',        label: 'Kelola Tutorial',  id: 'tutorials'  },
+    { href: 'admin-categories.html', label: 'Kelola Kategori',  id: 'categories' },
+    { href: 'admin-users.html',      label: 'Kelola User',      id: 'users'      },
+];
 
     const navLinks = isAdmin ? adminNavLinks : userNavLinks;
 

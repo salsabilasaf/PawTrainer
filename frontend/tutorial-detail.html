@@ -41,6 +41,7 @@
             <div>
                 <div class="tutorial-detail__meta" id="tutMeta"></div>
                 <h1 class="tutorial-detail__title" id="tutTitle"></h1>
+                <div class="tutorial-detail__content" id="tutContent"></div>
 
                 <!-- Image -->
                 <div id="tutImgWrap"></div>
@@ -48,8 +49,9 @@
                 <!-- YouTube -->
                 <div id="tutVideo"></div>
 
-                <!-- Content -->
-                <div class="tutorial-detail__content" id="tutContent"></div>
+<div id="relatedVideos"></div>
+
+                
 
                 <!-- Comments -->
                 <div class="section-header" style="margin-top:2rem;">
@@ -71,13 +73,15 @@
             </div>
 
             <!-- Sidebar -->
-            <div class="tutorial-sidebar">
-                <div class="sidebar-box">
-                    <h3>Aksi</h3>
-                    <button class="fav-btn" id="favBtn" style="width:100%;justify-content:center;">
-                        Tambah ke Favorit
-                    </button>
-                </div>
+            <div class="sidebar-box" id="actionBox">
+    <h3>Aksi</h3>
+
+    <button
+        id="favoriteBtn"
+        class="btn btn--outline btn--full">
+        Tambah ke Favorit
+    </button>
+</div>
 
                 <div class="sidebar-box">
                     <h3>Info Tutorial</h3>
@@ -161,20 +165,28 @@
 
         // Info
         document.getElementById('tutInfo').innerHTML = `
-            <div><strong>Kategori:</strong> ${t.category?.name || '—'}</div>
-            <div><strong>Level:</strong> ${t.difficulty || '—'}</div>
-            <div><strong>Durasi:</strong> ${t.estimated_time} menit</div>
-            <div><strong>Dibuat:</strong> ${UI.formatDate(t.created_at)}</div>`;
+    <div><strong>Kategori:</strong> ${t.category?.name || '—'}</div>
+    <div><strong>Komentar:</strong> ${t.comments_count || 0}</div>
+    <div><strong>Favorit:</strong> ${t.favorites_count || 0}</div>
+    <div><strong>Dibuat:</strong> ${UI.formatDate(t.created_at)}</div>`;
 
-        // Favorite button
-        updateFavBtn();
+const user = Auth.getUser();
+
+if (user?.role === 'admin') {
+    document.getElementById('actionBox').style.display = 'none';
+} else {
+    updateFavBtn();
+}
+
+// Video terkait
+loadRelatedVideos(t.title);
 
         document.getElementById('loadingState').style.display    = 'none';
         document.getElementById('tutorialContent').style.display = 'block';
     }
 
     function updateFavBtn() {
-        const btn = document.getElementById('favBtn');
+        const btn = document.getElementById('favoriteBtn');
         if (isFavorite) {
             btn.classList.add('active');
             btn.innerHTML = 'Hapus dari Favorit';
@@ -184,8 +196,8 @@
         }
     }
 
-    document.getElementById('favBtn').addEventListener('click', async () => {
-        const btn = document.getElementById('favBtn');
+    document.getElementById('favoriteBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('favoriteBtn');
         UI.setLoading(btn, true);
         try {
             const res    = await FavoriteAPI.toggle(tutId);
@@ -281,6 +293,43 @@
         }
     }
 
+    async function loadRelatedVideos(keyword) {
+    try {
+
+        const res = await ExternalAPI.getVideos(keyword);
+
+        const videos =
+            res.data.data.videos || [];
+
+        if (!videos.length) return;
+
+        document.getElementById('relatedVideos').innerHTML = `
+            <div class="section-header" style="margin-top:2rem;">
+                <h2>Video Terkait</h2>
+            </div>
+
+            <div class="video-grid">
+                ${videos.slice(0,3).map(video => `
+                    <a
+                        href="${video.url}"
+                        target="_blank"
+                        class="video-card"
+                    >
+                        <img
+                            src="${video.thumbnail}"
+                            alt="${video.title}"
+                        >
+
+                        <h4>${video.title}</h4>
+                    </a>
+                `).join('')}
+            </div>
+        `;
+
+    } catch (err) {
+        console.error(err);
+    }
+}
     loadTutorial();
 </script>
 

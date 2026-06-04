@@ -91,28 +91,41 @@
         </div>
     </div>
 
-    <!-- Daftar Kategori -->
-    <div class="section-header" style="margin-top:2.5rem;">
-        <h2>Kategori Aktif</h2>
-    </div>
-
-    <div id="categoriesContainer" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:2.5rem;">
-        <div class="skeleton skeleton-line" style="width:80px;height:32px;border-radius:20px;"></div>
-        <div class="skeleton skeleton-line" style="width:100px;height:32px;border-radius:20px;"></div>
-        <div class="skeleton skeleton-line" style="width:90px;height:32px;border-radius:20px;"></div>
-    </div>
 
     <!-- Activity Log -->
-    <div class="section-header" style="margin-top:2.5rem;">
-        <h2>Activity Log</h2>
-        <span id="activityCount" style="font-size:0.85rem;color:var(--text-muted);"></span>
+    <section class="activity-section">
+    <div class="section-header">
+        <h2>Aktivitas Terbaru</h2>
     </div>
 
-    <div id="activityLog" style="display:flex;flex-direction:column;gap:0.75rem;max-width:720px;">
-        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
-        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
-        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
+    <div class="activity-list">
+
+        <div class="activity-item">
+            <span class="activity-dot"></span>
+            <div>
+                <p>Komentar baru ditambahkan</p>
+                <small>03 Jun 2026</small>
+            </div>
+        </div>
+
+        <div class="activity-item">
+            <span class="activity-dot"></span>
+            <div>
+                <p>Jaemin baru mendaftar</p>
+                <small>01 Jun 2026</small>
+            </div>
+        </div>
+
+        <div class="activity-item">
+            <span class="activity-dot"></span>
+            <div>
+                <p>Tutorial Clicker Training ditambahkan</p>
+                <small>01 Jun 2026</small>
+            </div>
+        </div>
+
     </div>
+</section>
 
 </main>
 
@@ -142,7 +155,6 @@ async function loadDashboard() {
         document.getElementById('statComments').textContent  = totalComments;
 
         renderTutorials(tutorials.slice(0, 6));
-        renderActivityLog(tutorials);
     } catch (err) {
         document.getElementById('statTutorials').textContent = '—';
         document.getElementById('statComments').textContent  = '—';
@@ -150,8 +162,7 @@ async function loadDashboard() {
             `<div class="alert alert--error" style="grid-column:1/-1">
                 Gagal memuat tutorial: ${UI.parseError(err)}
              </div>`;
-        document.getElementById('activityLog').innerHTML =
-            `<div class="alert alert--error">Gagal memuat activity log.</div>`;
+        
     }
 
     // Fetch categories
@@ -193,11 +204,6 @@ function resetSkeletons() {
             <div class="skeleton skeleton-line" style="width:80%"></div>
             <div class="skeleton skeleton-line skeleton-line--short"></div>
         </div>`;
-
-    document.getElementById('activityLog').innerHTML = `
-        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
-        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>
-        <div class="skeleton skeleton-line" style="height:48px;border-radius:12px;"></div>`;
 }
 
 function renderTutorials(tutorials) {
@@ -234,63 +240,60 @@ function renderTutorials(tutorials) {
     </article>`).join('');
 }
 
-function renderCategories(categories) {
-    const container = document.getElementById('categoriesContainer');
-    if (categories.length === 0) {
-        container.innerHTML = `<span style="color:var(--text-muted);font-size:0.9rem;">Belum ada kategori.</span>`;
-        return;
+
+async function loadDashboardData() {
+    const user = Auth.getUser();
+    document.getElementById('greeting').textContent =
+        `Halo, ${user?.name?.split(' ')[0] || 'Admin'}!`;
+
+    resetSkeletons();
+
+
+    try {
+        const res = await AdminAPI.getStats();
+        const stats = unwrapData(res);
+        document.getElementById('statTutorials').textContent = stats.total_tutorials ?? 0;
+        document.getElementById('statCategories').textContent = stats.total_categories ?? 0;
+        document.getElementById('statComments').textContent = stats.total_comments ?? 0;
+        document.getElementById('statFavs').textContent = stats.total_favorites ?? 0;
+    } catch (_) {
+        ['statTutorials', 'statCategories', 'statComments', 'statFavs'].forEach(id => {
+            document.getElementById(id).textContent = '-';
+        });
     }
-    container.innerHTML = categories.map(c => `
-        <span class="badge badge--gray" style="padding:0.4rem 1rem;border-radius:20px;font-size:0.85rem;background:var(--sand);color:var(--brown);">
-            ${c.name}
-            ${c.tutorials_count !== undefined ? `<strong style="margin-left:0.4rem;">${c.tutorials_count}</strong>` : ''}
-        </span>`).join('');
+
+    try {
+        const res = await TutorialAPI.getAll(1);
+        const tutorials = unwrapData(res).tutorials || [];
+        renderTutorials(tutorials.slice(0, 6));
+    } catch (err) {
+        document.getElementById('tutorialsContainer').innerHTML =
+            `<div class="alert alert--error" style="grid-column:1/-1">Gagal memuat tutorial: ${UI.parseError(err)}</div>`;
+    }
+
 }
 
-function renderActivityLog(tutorials) {
+function renderAdminActivityLog(logs) {
     const container = document.getElementById('activityLog');
 
-    // Buat activity dari data tutorial yang sudah ada (sorted by created_at desc)
-    const sorted = [...tutorials].sort((a, b) =>
-        new Date(b.created_at) - new Date(a.created_at)
-    );
-
-    if (sorted.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state__title" style="font-size:1rem;">Belum ada aktivitas</div>
-            </div>`;
+    if (logs.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state__title" style="font-size:1rem;">Belum ada aktivitas</div></div>`;
         document.getElementById('activityCount').textContent = '';
         return;
     }
 
-    document.getElementById('activityCount').textContent =
-        `${sorted.length} entri terbaru`;
-
-    container.innerHTML = sorted.slice(0, 10).map(t => `
-        <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.875rem 1.125rem;
-                    background:var(--warm-white);border:1.5px solid var(--sand);
-                    border-radius:var(--radius);cursor:pointer;"
-             onclick="location.href='tutorial-detail.html?id=${t.id}'">
-            <span style="font-size:1.4rem;line-height:1;">📝</span>
+    document.getElementById('activityCount').textContent = `${logs.length} entri terbaru`;
+    container.innerHTML = logs.map(log => `
+        <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.875rem 1.125rem;background:var(--warm-white);border:1.5px solid var(--sand);border-radius:var(--radius);">
+            <span class="badge badge--gray">${log.type}</span>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;color:var(--text-primary);
-                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                    Tutorial dibuat: ${t.title}
-                </div>
-                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;display:flex;gap:1rem;">
-                    <span>${t.category?.name || 'Tanpa Kategori'}</span>
-                    <span>${UI.difficultyBadge(t.difficulty)}</span>
-                    <span>${UI.formatDate(t.created_at)}</span>
-                </div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;
-                        font-size:0.8rem;color:var(--text-muted);flex-shrink:0;">
-                <span>💬 ${t.comments_count || 0}</span>
-                <span>❤️ ${t.favorites_count || 0}</span>
+                <div style="font-weight:600;color:var(--text-primary);">${log.text}</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">${UI.formatDate(log.created_at)}</div>
             </div>
         </div>`).join('');
 }
+
+loadDashboard = loadDashboardData;
 
 // Initial load
 loadDashboard();
