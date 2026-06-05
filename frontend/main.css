@@ -363,6 +363,7 @@ h3 { font-size: 1.2rem; }
     width: 100%;
     height: 180px;
     object-fit: cover;
+    object-position: center center;
     background: var(--sand);
     display: flex;
     align-items: center;

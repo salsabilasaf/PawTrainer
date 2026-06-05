@@ -60,15 +60,13 @@ class TutorialController extends Controller
      * Akses: admin only
      */
     public function store(StoreTutorialRequest $request): JsonResponse
-{
-    dd('MASUK CONTROLLER');
+    {
+        $tutorial = $this->tutorialService->create($request->validated());
 
-    $tutorial = $this->tutorialService->create($request->validated());
-
-    return ResponseHelper::created('Tutorial berhasil dibuat', [
-        'tutorial' => $tutorial->load('category:id,name'),
-    ]);
-}
+        return ResponseHelper::created('Tutorial berhasil dibuat', [
+            'tutorial' => $tutorial->load('category:id,name'),
+        ]);
+    }
     
 
     /**

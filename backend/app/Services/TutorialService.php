@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Tutorial;
+use App\Services\ExternalApiService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -60,46 +61,53 @@ class TutorialService
      * Buat tutorial baru. Hanya admin.
      */
     public function create(array $data): Tutorial
-{
-    dd('MASUK CREATE');
+    {
+        if (empty($data['image_url'])) {
+            try {
+                $data['image_url'] = app(ExternalApiService::class)->getRandomBreedImage() ?: null;
+            } catch (\Exception $e) {
+                // ignore and biarkan tetap null
+            }
+        }
 
-    return Tutorial::create($data);
-}
+        return Tutorial::create($data);
+    }
+
     public function update(int $id, array $data): Tutorial
-{
-    $tutorial = Tutorial::findOrFail($id);
+    {
+        $tutorial = Tutorial::findOrFail($id);
 
-    if (
-        isset($data['title']) &&
-        $data['title'] !== $tutorial->title
-    ) {
-
-        try {
-
-            $youtube =
-                app(\App\Services\ExternalApiService::class)
+        if (
+            isset($data['title']) &&
+            $data['title'] !== $tutorial->title
+        ) {
+            try {
+                $youtube = app(\App\Services\ExternalApiService::class)
                     ->searchYouTubeVideos(
                         $data['title'] . ' cat training',
                         1
                     );
 
-            if (!empty($youtube['videos'][0])) {
-
-                $data['youtube_url'] =
-                    $youtube['videos'][0]['url'];
-
-                $data['image_url'] =
-                    $youtube['videos'][0]['thumbnail'];
+                if (!empty($youtube['videos'][0])) {
+                    $data['youtube_url'] = $youtube['videos'][0]['url'];
+                }
+            } catch (\Exception $e) {
+                // ignore
             }
-
-        } catch (\Exception $e) {
         }
+
+        if (empty($data['image_url'])) {
+            try {
+                $data['image_url'] = app(ExternalApiService::class)->getRandomBreedImage() ?: null;
+            } catch (\Exception $e) {
+                // ignore
+            }
+        }
+
+        $tutorial->update($data);
+
+        return $tutorial->fresh(['category:id,name']);
     }
-
-    $tutorial->update($data);
-
-    return $tutorial->fresh(['category:id,name']);
-}
 
     /**
      * Hapus tutorial by ID. Hanya admin.

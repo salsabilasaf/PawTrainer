@@ -42,8 +42,51 @@
 </main>
 
 <script>
+// Helpers for thumbnail fallback (The Cat API + YouTube)
+let breedImages = [];
+
+function getYoutubeVideoId(url) {
+    if (!url) return null;
+    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+    return match ? match[1] : null;
+}
+
+function getYoutubeThumbnail(url) {
+    const id = getYoutubeVideoId(url);
+    return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+}
+
+function hashString(value) {
+    return Array.from(String(value)).reduce((hash, char) => {
+        return ((hash << 5) - hash) + char.charCodeAt(0);
+    }, 0);
+}
+
+function getFallbackBreedImage(tutorial) {
+    if (!breedImages.length) return null;
+    const seed = hashString(tutorial.title || tutorial.id || 'fallback');
+    const index = Math.abs(seed) % breedImages.length;
+    return breedImages[index];
+}
+
+function getTutorialThumbnail(tutorial) {
+    return tutorial.image_url || getYoutubeThumbnail(tutorial.youtube_url) || getFallbackBreedImage(tutorial) || null;
+}
+
+async function loadBreedImages() {
+    try {
+        const res = await ExternalAPI.getBreeds();
+        const breeds = unwrapData(res).breeds || [];
+        breedImages = breeds.map(b => b.image_url).filter(Boolean);
+    } catch (_) {
+        breedImages = [];
+    }
+}
+
 async function loadFavorites() {
     try {
+        await loadBreedImages();
+
         const res       = await FavoriteAPI.getAll();
         const favorites = unwrapData(res).favorites || [];
 
@@ -65,24 +108,26 @@ async function loadFavorites() {
         grid.innerHTML = favorites.map(f => {
             const t = f.tutorial || f;   // backend mungkin embed tutorial langsung
             if (!t || !t.id) return '';
+
+            const thumb = getTutorialThumbnail(t);
+            const imgEl = thumb
+                ? `<img class="card__img" src="${thumb}" alt="${t.title || ''}" loading="lazy" onerror="this.outerHTML='<div class=card__img--placeholder></div>'">`
+                : `<div class="card__img--placeholder"></div>`;
+
             return `
             <article class="card" style="position:relative;">
-                ${t.image_url
-                    ? `<img class="card__img" src="${t.image_url}" alt="${t.title || ''}" loading="lazy"
-                         onerror="this.outerHTML='<div class=card__img--placeholder></div>'">`
-                    : `<div class="card__img--placeholder"></div>`}
+                ${imgEl}
 
-                <!-- Remove button -->
+                <!-- Remove button (trash icon) -->
                 <button class="btn btn--ghost btn--sm" title="Hapus dari favorit"
-                    onclick="removeFav(event, ${t.id})"
+                    onclick="confirmRemove(event, ${t.id})"
                     style="position:absolute;top:0.6rem;right:0.6rem;background:rgba(255,255,255,0.9);
                            border-radius:50%;width:34px;height:34px;padding:0;font-size:1rem;
-                           box-shadow:0 1px 6px rgba(0,0,0,0.15);">
-                    Hapus
+                           box-shadow:0 1px 6px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
 
-                <div class="card__body" style="cursor:pointer;"
-                    onclick="location.href='tutorial-detail.html?id=${t.id}'">
+                <div class="card__body" style="cursor:pointer;" onclick="location.href='tutorial-detail.html?id=${t.id}'">
                     <div class="card__meta">
                         ${UI.difficultyBadge(t.difficulty)}
                         <span>${t.estimated_time || '?'} mnt</span>
@@ -90,7 +135,8 @@ async function loadFavorites() {
                     <h3 class="card__title">${t.title || '—'}</h3>
                     <p class="card__excerpt">${t.content || '—'}</p>
                     <div class="card__footer">
-                        <span>${t.comments_count || 0}</span>
+                        <span>💬 ${t.comments_count || 0}</span>
+                        <span>❤️ ${t.favorites_count || 0}</span>
                         <span>${UI.formatDate(t.created_at || f.created_at)}</span>
                     </div>
                 </div>
@@ -105,24 +151,31 @@ async function loadFavorites() {
     }
 }
 
+function confirmRemove(event, tutId) {
+    event.stopPropagation();
+    if (!confirm('Hapus tutorial dari favorit?')) return;
+    removeFav(event, tutId);
+}
+
 async function removeFav(event, tutId) {
     event.stopPropagation();
     const btn = event.currentTarget;
-    btn.textContent = '…';
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '…';
     btn.disabled = true;
 
     try {
         const res    = await FavoriteAPI.toggle(tutId);
         const action = unwrapData(res).action;
         if (action === 'removed') {
-            UI.showToast(' Dihapus dari favorit', 'success');
+            UI.showToast('Dihapus dari favorit', 'success');
             loadFavorites();
         } else {
             UI.showToast('Tutorial kembali difavoritkan', 'success');
             loadFavorites();
         }
     } catch (err) {
-        btn.textContent = 'Hapus';
+        btn.innerHTML = origHtml;
         btn.disabled    = false;
         UI.showToast(UI.parseError(err), 'error');
     }

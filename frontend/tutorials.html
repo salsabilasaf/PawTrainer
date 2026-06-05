@@ -85,10 +85,6 @@
                     <label>Waktu Estimasi (menit) *</label>
                     <input type="number" id="addTime" required min="1">
                 </div>
-                <div class="form-group">
-                    <label>URL Gambar</label>
-                    <input type="url" id="addImage">
-                </div>
             </form>
         </div>
         <div class="modal__footer">
@@ -135,10 +131,6 @@
                     <label>Waktu Estimasi (menit) *</label>
                     <input type="number" id="editTime" required min="1">
                 </div>
-                <div class="form-group">
-                    <label>URL Gambar</label>
-                    <input type="url" id="editImage">
-                </div>
             </form>
         </div>
         <div class="modal__footer">
@@ -174,6 +166,49 @@ const ICON_CLOCK   = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;str
 const ICON_COMMENT = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
 const ICON_HEART   = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 const PLACEHOLDER  = `<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+
+let breedImages = [];
+
+function getYoutubeVideoId(url) {
+    if (!url) return null;
+    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+    return match ? match[1] : null;
+}
+
+function getYoutubeThumbnail(url) {
+    const id = getYoutubeVideoId(url);
+    return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+}
+
+function isValidUrl(value) {
+    if (!value) return false;
+    try {
+        const url = new URL(value.trim());
+        return ['http:', 'https:'].includes(url.protocol);
+    } catch {
+        return false;
+    }
+}
+
+function hashString(value) {
+    return Array.from(String(value)).reduce((hash, char) => {
+        return ((hash << 5) - hash) + char.charCodeAt(0);
+    }, 0);
+}
+
+function getFallbackBreedImage(tutorial) {
+    if (!breedImages.length) return null;
+    const seed = hashString(tutorial.title || tutorial.id || 'fallback');
+    const index = Math.abs(seed) % breedImages.length;
+    return breedImages[index];
+}
+
+function getTutorialThumbnail(tutorial) {
+    return tutorial.image_url
+        || getYoutubeThumbnail(tutorial.youtube_url)
+        || getFallbackBreedImage(tutorial)
+        || null;
+}
 
 let currentPage = 1;
 let allTutorials = [];
@@ -222,8 +257,7 @@ async function submitAddTutorial() {
             content: document.getElementById('addContent').value,
             difficulty: document.getElementById('addDifficulty').value,
             category_id: parseInt(document.getElementById('addCategory').value),
-            estimated_time: parseInt(document.getElementById('addTime').value),
-            image_url: document.getElementById('addImage').value || null
+            estimated_time: parseInt(document.getElementById('addTime').value)
         };
         
         await TutorialAPI.create(formData);
@@ -254,7 +288,6 @@ async function openEditModal(tutorialId) {
         document.getElementById('editContent').value = t.content || '';
         document.getElementById('editDifficulty').value = t.difficulty || '';
         document.getElementById('editTime').value = t.estimated_time || '';
-        document.getElementById('editImage').value = t.image_url || '';
         document.getElementById('editCategory').value = t.category_id || '';
         
         openModal('editModal');
@@ -270,13 +303,13 @@ async function submitEditTutorial() {
     
     try {
         const id = document.getElementById('editId').value;
+
         const formData = {
             title: document.getElementById('editTitle').value,
             content: document.getElementById('editContent').value,
             difficulty: document.getElementById('editDifficulty').value,
             category_id: parseInt(document.getElementById('editCategory').value),
-            estimated_time: parseInt(document.getElementById('editTime').value),
-            image_url: document.getElementById('editImage').value || null
+            estimated_time: parseInt(document.getElementById('editTime').value)
         };
         
         await TutorialAPI.update(id, formData);
@@ -343,21 +376,37 @@ async function submitDeleteTutorial() {
     } catch (_) {}
 })();
 
+async function loadBreedImages() {
+    try {
+        const res = await ExternalAPI.getBreeds();
+        const breeds = unwrapData(res).breeds || [];
+        breedImages = breeds
+            .map(b => b.image_url)
+            .filter(Boolean);
+    } catch (_) {
+        breedImages = [];
+    }
+}
+
 async function loadTutorials(page = 1) {
     showSkeletons();
     document.getElementById('errorBanner').style.display = 'none';
     try {
+        if (!breedImages.length) {
+            await loadBreedImages();
+        }
+
         const res  = await TutorialAPI.getAll(page);
         const data = unwrapData(res);
         allTutorials = data.tutorials || [];
         const params = new URLSearchParams(window.location.search);
-const categoryId = params.get('category_id');
+        const categoryId = params.get('category_id');
 
-if (categoryId) {
-    allTutorials = allTutorials.filter(
-        t => t.category_id == categoryId
-    );
-}
+        if (categoryId) {
+            allTutorials = allTutorials.filter(
+                t => t.category_id == categoryId
+            );
+        }
         pagination   = data.pagination || {};
         currentPage  = page;
         renderTutorials();
@@ -398,12 +447,24 @@ function renderTutorials() {
         return;
     }
 
-    grid.innerHTML = filtered.map(t => `
+    grid.innerHTML = filtered.map(t => {
+        const thumb = getTutorialThumbnail(t);
+        return `
         <article class="card" style="display:flex;flex-direction:column;">
             <div onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;flex:1;">
-                ${t.image_url
-                    ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" loading="lazy" onerror="this.outerHTML='<div class=card__img--placeholder>${PLACEHOLDER}</div>'">`
-                    : `<div class="card__img--placeholder">${PLACEHOLDER}</div>`}
+                <div style="position:relative;overflow:hidden;border-top-left-radius:var(--radius);border-top-right-radius:var(--radius);">
+                    ${thumb ? `
+                        <img class="card__img" src="${thumb}" alt="${t.title}" loading="lazy"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="card__img--placeholder" style="display:none;">
+                            ${PLACEHOLDER}
+                        </div>
+                    ` : `
+                        <div class="card__img--placeholder">
+                            ${PLACEHOLDER}
+                        </div>
+                    `}
+                </div>
                 <div class="card__body">
                     <div class="card__meta">
                         ${UI.difficultyBadge(t.difficulty)}
@@ -411,7 +472,6 @@ function renderTutorials() {
                         <span>${t.category?.name || ''}</span>
                     </div>
                     <h3 class="card__title">${t.title}</h3>
-                    <p class="card__excerpt">${t.content || '—'}</p>
                     <div class="card__footer">
                         <span class="meta-icon">${ICON_COMMENT} ${t.comments_count || 0} komentar</span>
                         <span class="meta-icon">${ICON_HEART} ${t.favorites_count || 0}</span>
@@ -424,8 +484,8 @@ function renderTutorials() {
                     <button class="btn btn--sm btn--danger" style="flex:1;" onclick="openDeleteModal(${t.id}, '${t.title.replace(/'/g, "\\'")}')">Hapus</button>
                 </div>
             ` : ''}
-        </article>`
-    ).join('');
+        </article>`;
+    }).join('');
 }
 
 function renderPagination() {

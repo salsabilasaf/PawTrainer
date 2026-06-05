@@ -92,6 +92,50 @@
 
     document.getElementById('greeting').textContent =
         `Halo, ${user?.name?.split(' ')[0] || 'Pengguna'}!`;
+   // ── Load breed images FIRST (for fallback) ───────────────────
+   let breedImages = [];
+   try {
+       const res = await ExternalAPI.getBreeds();
+       const data = unwrapData(res);
+       breedImages = (data.breeds || [])
+           .map(b => b.image_url)
+           .filter(Boolean);
+   } catch (_) {
+       // Silent fail if breeds can't load
+   }
+
+   // ── Helper functions untuk thumbnail ───────────────────────────
+   function getYoutubeVideoId(url) {
+       if (!url) return null;
+       const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+       return match ? match[1] : null;
+   }
+
+   function getYoutubeThumbnail(url) {
+       const id = getYoutubeVideoId(url);
+       return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+   }
+
+   function hashString(value) {
+       return Array.from(String(value)).reduce((hash, char) => {
+           return ((hash << 5) - hash) + char.charCodeAt(0);
+       }, 0);
+   }
+
+   function getFallbackBreedImage(tutorial) {
+       if (!breedImages.length) return null;
+       const seed = hashString(tutorial.title || tutorial.id || 'fallback');
+       const index = Math.abs(seed) % breedImages.length;
+       return breedImages[index];
+   }
+
+   function getTutorialThumbnail(tutorial) {
+       return tutorial.image_url
+           || getYoutubeThumbnail(tutorial.youtube_url)
+           || getFallbackBreedImage(tutorial)
+           || null;
+   }
+
 
     // Fetch tutorials
     try {
@@ -111,7 +155,31 @@
                     <p class="empty-state__text">Minta admin untuk menambah tutorial pertama.</p>
                 </div>`;
         } else {
-            container.innerHTML = tutorials.map(t => buildTutorialCard(t)).join('');
+            container.innerHTML = tutorials.map(t => {
+                const thumb = getTutorialThumbnail(t);
+                const imgEl = thumb
+                    ? `<img class="card__img" src="${thumb}" alt="${t.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                       <div class="card__img--placeholder" style="display:none">🐾</div>`
+                    : `<div class="card__img--placeholder"></div>`;
+                return `
+                <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
+                    ${imgEl}
+                    <div class="card__body">
+                        <div class="card__meta">
+                            ${UI.difficultyBadge(t.difficulty)}
+                            <span>${t.estimated_time} menit</span>
+                            <span>${t.category?.name || ''}</span>
+                        </div>
+                        <h3 class="card__title">${t.title}</h3>
+                        <p class="card__excerpt">${t.content || ''}</p>
+                        <div class="card__footer">
+                            <span>💬 ${t.comments_count || 0}</span>
+                            <span>❤️ ${t.favorites_count || 0}</span>
+                            <span>${UI.formatDate(t.created_at)}</span>
+                        </div>
+                    </div>
+                </article>`;
+            }).join('');
         }
     } catch (err) {
         document.getElementById('tutorialsContainer').innerHTML =
@@ -152,32 +220,6 @@
         }
     } catch (_) {}
 })();
-
-function buildTutorialCard(t) {
-    const imgEl = t.image_url
-        ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-           <div class="card__img--placeholder" style="display:none">🐾</div>`
-        : `<div class="card__img--placeholder"></div>`;
-
-    return `
-    <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
-        ${imgEl}
-        <div class="card__body">
-            <div class="card__meta">
-                ${UI.difficultyBadge(t.difficulty)}
-                <span>${t.estimated_time} menit</span>
-                <span>${t.category?.name || ''}</span>
-            </div>
-            <h3 class="card__title">${t.title}</h3>
-            <p class="card__excerpt">${t.content || ''}</p>
-            <div class="card__footer">
-                <span>${t.comments_count || 0}</span>
-                <span>${t.favorites_count || 0}</span>
-                <span>${UI.formatDate(t.created_at)}</span>
-            </div>
-        </div>
-    </article>`;
-}
 </script>
 
 </body>

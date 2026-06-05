@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Http\Client\RequestException;
 
 class ExternalApiService
 {
@@ -37,6 +36,7 @@ class ExternalApiService
                 'life_span'   => $breed['life_span'] ?? null,
                 'weight_kg'   => $breed['weight']['metric'] ?? null,
                 'wikipedia'   => $breed['wikipedia_url'] ?? null,
+                            'image_url'   => $breed['image']['url'] ?? null,
             ], $breeds);
         });
     }
@@ -130,4 +130,25 @@ class ExternalApiService
             ];
         });
     }
+
+    /**
+     * Ambil satu random breed image dari The Cat API.
+     */
+    public function getRandomBreedImage(): ?string
+    {
+        try {
+            $breeds = $this->getCatBreeds();
+            $breedsWithImage = array_filter($breeds, fn($b) => !empty($b['image_url']));
+
+            if (empty($breedsWithImage)) {
+                return null;
+            }
+
+            $random = $breedsWithImage[array_rand($breedsWithImage)];
+            return $random['image_url'] ?? null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }
+

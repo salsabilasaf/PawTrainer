@@ -54,18 +54,7 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="section-header" style="margin-top:2.5rem;">
-        <h2>Quick Actions</h2>
-    </div>
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2.5rem;">
-        <button class="btn btn--primary" onclick="location.href='tutorials.html'">
-            📝 Kelola Tutorial
-        </button>
-        <button class="btn btn--outline" id="refreshBtn" onclick="loadDashboard()">
-            🔄 Refresh Data
-        </button>
-    </div>
+    <!-- Quick Actions removed -->
 
     <!-- Tutorial Terbaru -->
     <div class="section-header">
@@ -130,6 +119,8 @@
 </main>
 
 <script>
+let breedImages = [];
+
 async function loadDashboard() {
     const user = Auth.getUser();
     document.getElementById('greeting').textContent =
@@ -137,6 +128,11 @@ async function loadDashboard() {
 
     // Reset ke skeleton saat refresh
     resetSkeletons();
+
+    // Load fallback cover images from The Cat API
+    try {
+        await loadBreedImages();
+    } catch (_) {}
 
     // Fetch tutorials
     let tutorials = [];
@@ -187,6 +183,35 @@ async function loadDashboard() {
     }
 }
 
+async function loadBreedImages() {
+    try {
+        const res = await ExternalAPI.getBreeds();
+        const breeds = unwrapData(res).breeds || [];
+        breedImages = breeds
+            .map(b => b.image_url)
+            .filter(Boolean);
+    } catch (_) {
+        breedImages = [];
+    }
+}
+
+function hashString(value) {
+    return Array.from(String(value)).reduce((hash, char) => {
+        return ((hash << 5) - hash) + char.charCodeAt(0);
+    }, 0);
+}
+
+function getFallbackBreedImage(tutorial) {
+    if (!breedImages.length) return null;
+    const seed = hashString(tutorial.title || tutorial.id || 'fallback');
+    const index = Math.abs(seed) % breedImages.length;
+    return breedImages[index];
+}
+
+function getTutorialThumbnail(tutorial) {
+    return tutorial.image_url || getFallbackBreedImage(tutorial) || null;
+}
+
 function resetSkeletons() {
     document.getElementById('tutorialsContainer').innerHTML = `
         <div class="skeleton-card">
@@ -217,27 +242,30 @@ function renderTutorials(tutorials) {
             </div>`;
         return;
     }
-    container.innerHTML = tutorials.map(t => `
-    <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
-        ${t.image_url
-            ? `<img class="card__img" src="${t.image_url}" alt="${t.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-               <div class="card__img--placeholder" style="display:none">🐾</div>`
-            : `<div class="card__img--placeholder">🐾</div>`}
-        <div class="card__body">
-            <div class="card__meta">
-                ${UI.difficultyBadge(t.difficulty)}
-                <span>${t.estimated_time} menit</span>
-                <span>${t.category?.name || ''}</span>
+    container.innerHTML = tutorials.map(t => {
+        const thumb = getTutorialThumbnail(t);
+        return `
+        <article class="card" onclick="location.href='tutorial-detail.html?id=${t.id}'" style="cursor:pointer;">
+            ${thumb
+                ? `<img class="card__img" src="${thumb}" alt="${t.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                   <div class="card__img--placeholder" style="display:none">🐾</div>`
+                : `<div class="card__img--placeholder">🐾</div>`}
+            <div class="card__body">
+                <div class="card__meta">
+                    ${UI.difficultyBadge(t.difficulty)}
+                    <span>${t.estimated_time} menit</span>
+                    <span>${t.category?.name || ''}</span>
+                </div>
+                <h3 class="card__title">${t.title}</h3>
+                <p class="card__excerpt">${t.content || ''}</p>
+                <div class="card__footer">
+                    <span>💬 ${t.comments_count || 0}</span>
+                    <span>❤️ ${t.favorites_count || 0}</span>
+                    <span>${UI.formatDate(t.created_at)}</span>
+                </div>
             </div>
-            <h3 class="card__title">${t.title}</h3>
-            <p class="card__excerpt">${t.content || ''}</p>
-            <div class="card__footer">
-                <span>💬 ${t.comments_count || 0}</span>
-                <span>❤️ ${t.favorites_count || 0}</span>
-                <span>${UI.formatDate(t.created_at)}</span>
-            </div>
-        </div>
-    </article>`).join('');
+        </article>`;
+    }).join('');
 }
 
 
@@ -248,6 +276,9 @@ async function loadDashboardData() {
 
     resetSkeletons();
 
+    try {
+        await loadBreedImages();
+    } catch (_) {}
 
     try {
         const res = await AdminAPI.getStats();

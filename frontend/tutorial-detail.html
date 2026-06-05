@@ -97,8 +97,52 @@
     const tutId      = params.get('id');
     let isFavorite   = false;
     let favorites    = [];
+    let breedImages  = [];
 
     if (!tutId) window.location.href = 'tutorials.html';
+
+    // ── Fetch breed images untuk fallback ───────────────────────
+    (async () => {
+        try {
+            const res = await ExternalAPI.getBreeds();
+            const data = unwrapData(res);
+            breedImages = (data.breeds || [])
+                .map(b => b.image_url)
+                .filter(Boolean);
+        } catch (_) {}
+    })();
+
+    // ── Helper functions untuk thumbnail ───────────────────────────
+    function getYoutubeVideoId(url) {
+        if (!url) return null;
+        const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+        return match ? match[1] : null;
+    }
+
+    function getYoutubeThumbnail(url) {
+        const id = getYoutubeVideoId(url);
+        return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : null;
+    }
+
+    function hashString(value) {
+        return Array.from(String(value)).reduce((hash, char) => {
+            return ((hash << 5) - hash) + char.charCodeAt(0);
+        }, 0);
+    }
+
+    function getFallbackBreedImage(tutorial) {
+        if (!breedImages.length) return null;
+        const seed = hashString(tutorial.title || tutorial.id || 'fallback');
+        const index = Math.abs(seed) % breedImages.length;
+        return breedImages[index];
+    }
+
+    function getTutorialThumbnail(tutorial) {
+        return tutorial.image_url
+            || getYoutubeThumbnail(tutorial.youtube_url)
+            || getFallbackBreedImage(tutorial)
+            || null;
+    }
 
     async function loadTutorial() {
         try {
@@ -140,12 +184,14 @@
 
         document.getElementById('tutTitle').textContent = t.title;
 
-        // Image
-        if (t.image_url) {
+        // Image dengan fallback
+        const thumb = getTutorialThumbnail(t);
+        if (thumb) {
             document.getElementById('tutImgWrap').innerHTML =
-                `<img src="${t.image_url}" alt="${t.title}"
+                `<img class="card__img" src="${thumb}" alt="${t.title}"
                     style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--radius-lg);margin-bottom:1.5rem;"
-                    onerror="this.style.display='none'">`;
+                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                      <div style="display:none;align-items:center;justify-content:center;width:100%;height:360px;background:var(--bg-secondary);border-radius:var(--radius-lg);margin-bottom:1.5rem;font-size:4rem;">🐾</div>`;
         }
 
         // YouTube
@@ -209,55 +255,8 @@ loadRelatedVideos(t.title);
             UI.showToast(UI.parseError(err), 'error');
         } finally {
             UI.setLoading(btn, false);
-            updateFavBtn();
         }
     });
-
-    async function loadComments() {
-        try {
-            const res      = await TutorialAPI.getComments(tutId);
-            const comments = unwrapData(res).comments || [];
-            renderComments(comments);
-        } catch (_) {
-            document.getElementById('commentsContainer').innerHTML =
-                `<p style="color:var(--text-muted);font-size:0.875rem;">Gagal memuat komentar.</p>`;
-        }
-    }
-
-    function renderComments(comments) {
-        const container = document.getElementById('commentsContainer');
-        const currentUser = Auth.getUser();
-
-        if (comments.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state" style="padding:2rem 1rem;">
-                    
-                    <div class="empty-state__title">Belum ada komentar</div>
-                    <p class="empty-state__text">Jadilah yang pertama berkomentar!</p>
-                </div>`;
-            return;
-        }
-
-        container.innerHTML = comments.map(c => {
-            const initials = c.user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
-            const canDelete = currentUser?.role === 'admin';
-            return `
-                <div class="comment" id="comment-${c.id}">
-                    <div class="comment__avatar">${initials}</div>
-                    <div class="comment__body">
-                        <div class="comment__header">
-                            <span class="comment__author">${c.user?.name || 'Pengguna'}</span>
-                            <div style="display:flex;align-items:center;gap:0.5rem;">
-                                <span class="comment__time">${UI.formatDate(c.created_at)}</span>
-                                ${canDelete ? `<button class="btn btn--ghost btn--sm" style="font-size:0.78rem;color:var(--soft-red);"
-                                    onclick="deleteComment(${c.id})">Hapus</button>` : ''}
-                            </div>
-                        </div>
-                        <p class="comment__text">${c.comment}</p>
-                    </div>
-                </div>`;
-        }).join('');
-    }
 
     document.getElementById('submitComment').addEventListener('click', async () => {
         const input = document.getElementById('commentInput');
@@ -281,6 +280,49 @@ loadRelatedVideos(t.title);
             UI.setLoading(btn, false);
         }
     });
+
+    async function loadComments() {
+        try {
+            const res = await TutorialAPI.getComments(tutId);
+            const data = unwrapData(res);
+            const comments = data.comments || [];
+            const currentUser = Auth.getUser();
+            const container = document.getElementById('commentsContainer');
+
+            if (!comments.length) {
+                container.innerHTML = `
+                <div class="empty-state" style="padding:2rem 1rem;">
+                    <div class="empty-state__title">Belum ada komentar</div>
+                    <p class="empty-state__text">Jadilah yang pertama berkomentar!</p>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = comments.map(c => {
+                const initials = c.user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
+                const canDelete = currentUser?.role === 'admin';
+                return `
+                    <div class="comment" id="comment-${c.id}">
+                        <div class="comment__avatar">${initials}</div>
+                        <div class="comment__body">
+                            <div class="comment__header">
+                                <span class="comment__author">${c.user?.name || 'Pengguna'}</span>
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    <span class="comment__time">${UI.formatDate(c.created_at)}</span>
+                                    ${canDelete ? `<button class="btn btn--ghost btn--sm" style="font-size:0.78rem;color:var(--soft-red);"
+                                        onclick="deleteComment(${c.id})">Hapus</button>` : ''}
+                                </div>
+                            </div>
+                            <p class="comment__text">${c.comment}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+        } catch (err) {
+            console.error(err);
+            document.getElementById('commentsContainer').innerHTML = `
+                <div class="alert alert--error">Gagal memuat komentar</div>`;
+        }
+    }
 
     async function deleteComment(id) {
         if (!confirm('Hapus komentar ini?')) return;
