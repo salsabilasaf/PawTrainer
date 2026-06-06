@@ -1,7 +1,4 @@
-// ============================================================
-//  PawTrainer — Navbar Component
-//  Inject navbar ke setiap halaman
-// ============================================================
+
 
 function renderNavbar(activePage = '') {
     const user = Auth.getUser();
@@ -65,7 +62,6 @@ function renderNavbar(activePage = '') {
 
     document.body.insertAdjacentHTML('afterbegin', html);
 
-    // Logout handler
     const handleLogout = async () => {
         try {
             await AuthAPI.logout();
@@ -77,7 +73,6 @@ function renderNavbar(activePage = '') {
     document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
     document.getElementById('logoutBtnMobile')?.addEventListener('click', handleLogout);
 
-    // Hamburger toggle
     const hamburger = document.getElementById('hamburgerBtn');
     const mobileNav  = document.getElementById('navMobile');
 

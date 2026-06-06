@@ -20,7 +20,6 @@
         <p class="page__subtitle">Selamat datang di PawTrainer — platform latihan kucing terbaik.</p>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid" id="statsGrid">
         <div class="stat-card">
             
@@ -44,7 +43,6 @@
         </div>
     </div>
 
-    <!-- Tutorial Terbaru -->
     <div class="section-header">
         <h2>Tutorial Terbaru</h2>
         <a href="tutorials.html" class="btn btn--outline btn--sm">Lihat Semua</a>
@@ -68,7 +66,6 @@
         </div>
     </div>
 
-    <!-- Cat Fact Preview -->
     <div class="section-header" style="margin-top:2.5rem;">
         <h2>Fakta Hari Ini</h2>
         <a href="catfacts.html" class="btn btn--outline btn--sm">Lihat Semua</a>
@@ -84,7 +81,6 @@
 (async () => {
     const user = Auth.getUser();
 
-    // Redirect admin ke dashboard admin
     if (user?.role === 'admin') {
         window.location.replace('admin-dashboard.html');
         return;
@@ -92,7 +88,7 @@
 
     document.getElementById('greeting').textContent =
         `Halo, ${user?.name?.split(' ')[0] || 'Pengguna'}!`;
-   // ── Load breed images FIRST (for fallback) ───────────────────
+
    let breedImages = [];
    try {
        const res = await ExternalAPI.getBreeds();
@@ -101,10 +97,9 @@
            .map(b => b.image_url)
            .filter(Boolean);
    } catch (_) {
-       // Silent fail if breeds can't load
+       // 
    }
 
-   // ── Helper functions untuk thumbnail ───────────────────────────
    function getYoutubeVideoId(url) {
        if (!url) return null;
        const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
@@ -137,7 +132,6 @@
    }
 
 
-    // Fetch tutorials
     try {
         const res  = await TutorialAPI.getAll(1);
         const data = unwrapData(res);
@@ -188,14 +182,12 @@
              </div>`;
     }
 
-    // Fetch favorites count
     try {
         const res  = await FavoriteAPI.getAll();
         const favs = unwrapData(res).favorites || [];
         document.getElementById('statFavs').textContent = favs.length;
     } catch (_) { document.getElementById('statFavs').textContent = '0'; }
 
-    // Fetch breeds count
     try {
         const res    = await ExternalAPI.getBreeds();
         const data   = unwrapData(res);
@@ -203,7 +195,6 @@
         document.getElementById('statBreeds').textContent = data.total || breeds.length;
     } catch (_) { document.getElementById('statBreeds').textContent = '—'; }
 
-    // Fetch cat fact
     try {
         const res   = await ExternalAPI.getFacts(1);
         const data  = unwrapData(res);

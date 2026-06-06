@@ -44,7 +44,6 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="api.js"></script>
 <script>
-    // Redirect jika sudah login
     if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
 
     const loginBtn = document.getElementById('loginBtn');
@@ -92,7 +91,6 @@
         }
     });
 
-    // Enter key
     document.addEventListener('keydown', e => {
         if (e.key === 'Enter') loginBtn.click();
     });

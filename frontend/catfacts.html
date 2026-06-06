@@ -37,7 +37,7 @@
     <div id="errorBanner" class="alert alert--error" style="display:none;"></div>
 
     <div id="factsGrid" class="grid grid--auto" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">
-        <!-- Skeletons -->
+        
         <div class="skeleton-card" style="padding:1.5rem;">
             <div class="skeleton skeleton-line" style="height:80px;border-radius:10px;"></div>
             <div class="skeleton skeleton-line skeleton-line--short" style="margin-top:10px;"></div>
@@ -74,7 +74,6 @@
         document.getElementById('errorBanner').style.display = 'none';
         UI.setLoading(refreshBtn, true);
 
-        // Show skeletons
         grid.innerHTML = Array(parseInt(limit)).fill(0).map(() => `
             <div class="skeleton-card" style="padding:1.5rem;">
                 <div class="skeleton skeleton-line" style="height:80px;border-radius:10px;"></div>

@@ -17,7 +17,6 @@
 <main class="page">
     <a href="tutorials.html" class="back-link">← Kembali ke Tutorial</a>
 
-    <!-- Loading state -->
     <div id="loadingState">
         <div class="skeleton skeleton-line" style="height:36px;width:70%;margin-bottom:16px;"></div>
         <div class="skeleton skeleton-line" style="height:320px;border-radius:16px;margin-bottom:24px;"></div>
@@ -26,7 +25,6 @@
         <div class="skeleton skeleton-line" style="height:16px;width:80%;"></div>
     </div>
 
-    <!-- Error state -->
     <div id="errorState" class="empty-state" style="display:none;">
         
         <div class="empty-state__title">Tutorial tidak ditemukan</div>
@@ -34,31 +32,24 @@
         <a href="tutorials.html" class="btn btn--primary" style="margin-top:1rem;">Kembali</a>
     </div>
 
-    <!-- Tutorial content -->
     <div id="tutorialContent" style="display:none;">
         <div class="tutorial-detail">
-            <!-- Main Column -->
+
             <div>
                 <div class="tutorial-detail__meta" id="tutMeta"></div>
                 <h1 class="tutorial-detail__title" id="tutTitle"></h1>
                 <div class="tutorial-detail__content" id="tutContent"></div>
 
-                <!-- Image -->
                 <div id="tutImgWrap"></div>
 
-                <!-- YouTube -->
                 <div id="tutVideo"></div>
 
 <div id="relatedVideos"></div>
 
-                
-
-                <!-- Comments -->
                 <div class="section-header" style="margin-top:2rem;">
                     <h2>Komentar</h2>
                 </div>
 
-                <!-- Add Comment -->
                 <div class="sidebar-box" style="margin-bottom:1.5rem;">
                     <h3>Tulis Komentar</h3>
                     <div class="form-group" style="margin-bottom:0.75rem;">
@@ -72,7 +63,6 @@
                 </div>
             </div>
 
-            <!-- Sidebar -->
             <div class="sidebar-box" id="actionBox">
     <h3>Aksi</h3>
 
@@ -101,7 +91,6 @@
 
     if (!tutId) window.location.href = 'tutorials.html';
 
-    // ── Fetch breed images untuk fallback ───────────────────────
     (async () => {
         try {
             const res = await ExternalAPI.getBreeds();
@@ -112,7 +101,6 @@
         } catch (_) {}
     })();
 
-    // ── Helper functions untuk thumbnail ───────────────────────────
     function getYoutubeVideoId(url) {
         if (!url) return null;
         const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
@@ -146,7 +134,6 @@
 
     async function loadTutorial() {
         try {
-            // Load tutorial & favorites in parallel
             const [tutRes, favRes] = await Promise.allSettled([
                 TutorialAPI.getById(tutId),
                 FavoriteAPI.getAll()
@@ -173,7 +160,6 @@
     function renderTutorial(t) {
         document.title = `${t.title} — PawTrainer`;
 
-        // Meta
         document.getElementById('tutMeta').innerHTML = `
             ${UI.difficultyBadge(t.difficulty)}
             <span>${t.estimated_time} menit</span>
@@ -184,7 +170,6 @@
 
         document.getElementById('tutTitle').textContent = t.title;
 
-        // Image dengan fallback
         const thumb = getTutorialThumbnail(t);
         if (thumb) {
             document.getElementById('tutImgWrap').innerHTML =
@@ -194,7 +179,6 @@
                       <div style="display:none;align-items:center;justify-content:center;width:100%;height:360px;background:var(--bg-secondary);border-radius:var(--radius-lg);margin-bottom:1.5rem;font-size:4rem;">🐾</div>`;
         }
 
-        // YouTube
         if (t.youtube_url) {
             const match = t.youtube_url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
             if (match) {
@@ -206,10 +190,8 @@
             }
         }
 
-        // Content
         document.getElementById('tutContent').textContent = t.content || '—';
 
-        // Info
         document.getElementById('tutInfo').innerHTML = `
     <div><strong>Kategori:</strong> ${t.category?.name || '—'}</div>
     <div><strong>Komentar:</strong> ${t.comments_count || 0}</div>
@@ -224,7 +206,6 @@ if (user?.role === 'admin') {
     updateFavBtn();
 }
 
-// Video terkait
 loadRelatedVideos(t.title);
 
         document.getElementById('loadingState').style.display    = 'none';
