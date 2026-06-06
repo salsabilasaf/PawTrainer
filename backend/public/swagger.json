@@ -668,10 +668,10 @@
                 "type": "object",
                 "properties": {
                   "tutorial_id": { "type": "integer" },
-                  "content": { "type": "string" },
+                  "comment": { "type": "string" },
                   "parent_id": { "type": "integer" }
                 },
-                "required": ["tutorial_id", "content"]
+                "required": ["tutorial_id", "comment"]
               }
             }
           }
@@ -682,6 +682,14 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           }
@@ -701,10 +709,10 @@
                 "type": "object",
                 "properties": {
                   "tutorial_id": { "type": "integer" },
-                  "content": { "type": "string" },
+                  "comment": { "type": "string" },
                   "parent_id": { "type": "integer" }
                 },
-                "required": ["tutorial_id", "content", "parent_id"]
+                "required": ["tutorial_id", "comment", "parent_id"]
               }
             }
           }
@@ -715,6 +723,14 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           }
