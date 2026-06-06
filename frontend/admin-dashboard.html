@@ -268,8 +268,9 @@ async function loadDashboardData() {
 
     try {
     const res = await AdminAPI.getActivityLog();
-    const logs = unwrapData(res).activities || [];
+    const logs = unwrapData(res).logs || [];
 
+    console.log(logs);
     renderAdminActivityLog(logs);
 } catch (err) {
     console.error('Activity Log Error:', err);
@@ -294,11 +295,40 @@ function renderAdminActivityLog(logs) {
 
     document.getElementById('activityCount').textContent = `${logs.length} entri terbaru`;
     container.innerHTML = logs.map(log => `
-        <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.875rem 1.125rem;background:var(--warm-white);border:1.5px solid var(--sand);border-radius:var(--radius);">
-            <span class="badge badge--gray">${log.type}</span>
+        <div style="
+display:flex;
+align-items:center;
+gap:0.75rem;
+padding:0.75rem 1rem;
+background:#fff;
+border:1px solid #e9e2d8;
+border-radius:12px;
+margin-bottom:0.75rem;
+">
+            <span style="
+font-size:0.72rem;
+font-weight:600;
+padding:0.3rem 0.6rem;
+background:#f5f5f5;
+border-radius:999px;
+color:#666;
+text-transform:capitalize;
+white-space:nowrap;
+">
+${log.type}
+</span>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;color:var(--text-primary);">${log.text}</div>
-                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">${UI.formatDate(log.created_at)}</div>
+                <div style="
+font-size:0.95rem;
+font-weight:500;
+color:#222;
+line-height:1.4;
+">${log.text}</div>
+                <div style="
+font-size:0.75rem;
+color:#999;
+margin-top:0.15rem;
+">${UI.formatDate(log.created_at)}</div>
             </div>
         </div>`).join('');
 }
