@@ -1,0 +1,841 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PawTrainer API",
+    "description": "Swagger dokumentasi PawTrainer.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "UserCredentials": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        },
+        "required": ["email", "password"]
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" },
+          "password_confirmation": { "type": "string" }
+        },
+        "required": ["name", "email", "password", "password_confirmation"]
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "token_type": { "type": "string", "example": "bearer" },
+          "expires_in": { "type": "integer", "example": 3600 }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Tutorial": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "category_id": { "type": "integer" },
+          "difficulty": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "GenericSuccess": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "errors": { "type": "object" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/register": {
+      "post": {
+        "summary": "Registrasi pengguna baru",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registrasi berhasil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TokenResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "Login pengguna",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserCredentials" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login berhasil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TokenResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Kredensial salah",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "summary": "Logout pengguna",
+        "tags": ["Auth"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Logout berhasil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "summary": "Ambil profil pengguna",
+        "tags": ["Auth"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Profil berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": { "$ref": "#/components/schemas/UserProfile" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/tutorials": {
+      "get": {
+        "summary": "Daftar tutorial",
+        "tags": ["Tutorials"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "category_id", "in": "query", "schema": { "type": "integer" }, "required": false },
+          { "name": "difficulty", "in": "query", "schema": { "type": "string" }, "required": false },
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "required": false },
+          { "name": "sort_by", "in": "query", "schema": { "type": "string" }, "required": false },
+          { "name": "sort_order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] }, "required": false },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer" }, "required": false }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar tutorial berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tutorials": { "type": "array", "items": { "$ref": "#/components/schemas/Tutorial" } },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "current_page": { "type": "integer" },
+                            "per_page": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "last_page": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Buat tutorial baru (admin)",
+        "tags": ["Tutorials"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category_id": { "type": "integer" },
+                  "difficulty": { "type": "string" }
+                },
+                "required": ["title", "description", "category_id", "difficulty"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tutorial dibuat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/tutorials/{id}": {
+      "get": {
+        "summary": "Detail tutorial",
+        "tags": ["Tutorials"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail tutorial",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "type": "object", "properties": { "tutorial": { "$ref": "#/components/schemas/Tutorial" } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Perbarui tutorial (admin)",
+        "tags": ["Tutorials"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category_id": { "type": "integer" },
+                  "difficulty": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tutorial diperbarui",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hapus tutorial (admin)",
+        "tags": ["Tutorials"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tutorial dihapus",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/categories": {
+      "get": {
+        "summary": "Daftar kategori",
+        "tags": ["Categories"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Kategori berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "type": "object", "properties": { "categories": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Buat kategori baru (admin)",
+        "tags": ["Categories"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kategori dibuat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/categories/{id}": {
+      "get": {
+        "summary": "Detail kategori",
+        "tags": ["Categories"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": {
+            "description": "Detail kategori",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Perbarui kategori (admin)",
+        "tags": ["Categories"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "name": { "type": "string" } },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kategori diperbarui",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hapus kategori (admin)",
+        "tags": ["Categories"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": {
+            "description": "Kategori dihapus",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/admin/stats": {
+      "get": {
+        "summary": "Dashboard stats (admin)",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Statistik dashboard berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "403": {
+            "description": "Hanya admin yang dapat mengakses endpoint ini",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/admin/comments": {
+      "get": {
+        "summary": "Daftar komentar admin (admin)",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "per_page", "in": "query", "schema": { "type": "integer" }, "required": false }],
+        "responses": {
+          "200": {
+            "description": "Komentar berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "403": {
+            "description": "Hanya admin yang dapat mengakses endpoint ini",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/admin/activity-log": {
+      "get": {
+        "summary": "Activity log admin (admin)",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Activity log berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "403": {
+            "description": "Hanya admin yang dapat mengakses endpoint ini",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/users": {
+      "get": {
+        "summary": "Daftar pengguna (admin)",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "per_page", "in": "query", "schema": { "type": "integer" }, "required": false }],
+        "responses": {
+          "200": {
+            "description": "Daftar user berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "403": {
+            "description": "Hanya admin yang dapat mengakses endpoint ini",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/users/{id}": {
+      "put": {
+        "summary": "Perbarui user (admin)",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "role": { "type": "string", "enum": ["admin", "user"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "403": {
+            "description": "Hanya admin yang dapat mengakses endpoint ini",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hapus user (admin)",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": {
+            "description": "User berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          },
+          "403": {
+            "description": "Hanya admin yang dapat mengakses endpoint ini",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/comments": {
+      "get": {
+        "summary": "Daftar komentar untuk tutorial",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "tutorialId", "in": "query", "schema": { "type": "integer" }, "required": false }],
+        "responses": {
+          "200": {
+            "description": "Komentar berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Buat komentar baru",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tutorial_id": { "type": "integer" },
+                  "content": { "type": "string" },
+                  "parent_id": { "type": "integer" }
+                },
+                "required": ["tutorial_id", "content"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Komentar dibuat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/comments/reply": {
+      "post": {
+        "summary": "Balas komentar",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tutorial_id": { "type": "integer" },
+                  "content": { "type": "string" },
+                  "parent_id": { "type": "integer" }
+                },
+                "required": ["tutorial_id", "content", "parent_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Balasan komentar dibuat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/comments/{id}": {
+      "delete": {
+        "summary": "Hapus komentar (admin)",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": {
+            "description": "Komentar dihapus",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/favorites": {
+      "get": {
+        "summary": "Daftar favorit pengguna",
+        "tags": ["Favorites"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Favorit berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Tambah favorite",
+        "tags": ["Favorites"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tutorial_id": { "type": "integer" }
+                },
+                "required": ["tutorial_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Favorit ditambahkan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/breeds": {
+      "get": {
+        "summary": "Ambil daftar breed kucing eksternal",
+        "tags": ["External APIs"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Data breed berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/facts": {
+      "get": {
+        "summary": "Ambil fakta kucing eksternal",
+        "tags": ["External APIs"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Data fakta berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gateway/videos/{keyword}": {
+      "get": {
+        "summary": "Ambil video YouTube berdasarkan keyword",
+        "tags": ["External APIs"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "keyword", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Video berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericSuccess" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
