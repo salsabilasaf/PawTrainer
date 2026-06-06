@@ -57,7 +57,6 @@
         <p class="page__subtitle" id="totalBreeds">Menjelajahi semua ras kucing dari seluruh dunia.</p>
     </div>
 
-    <!-- Search -->
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
         <div class="search-bar" style="flex:1;min-width:200px;max-width:400px;">
             <span></span>
@@ -111,7 +110,6 @@
     </div>
 </main>
 
-<!-- Modal -->
 <div class="breed-modal-overlay" id="breedModal" onclick="closeModal(event)">
     <div class="breed-modal">
         <button class="breed-modal__close" onclick="closeBreedModal()">✕</button>
@@ -132,7 +130,7 @@
             document.getElementById('totalBreeds').textContent =
                 `Menjelajahi ${total} ras kucing dari seluruh dunia.`;
 
-            // Build origin filter
+
             const origins = [...new Set(allBreeds.map(b => b.origin).filter(Boolean))].sort();
             const origSel = document.getElementById('originFilter');
             origins.forEach(o => {

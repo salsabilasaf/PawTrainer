@@ -1,11 +1,7 @@
-// ============================================================
-//  PawTrainer — API Service Layer
-//  Semua HTTP call ke Laravel backend ada di sini
-// ============================================================
 
-const BASE_URL = 'http://127.0.0.1:8000/api';   // Ganti sesuai URL backend kamu
 
-// ── Axios Instance ────────────────────────────────────────────
+const BASE_URL = 'http://127.0.0.1:8000/api';   
+
 const api = axios.create({
     baseURL: BASE_URL,
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
@@ -15,7 +11,6 @@ function unwrapData(response) {
     return response?.data?.data || {};
 }
 
-// ── Request Interceptor — inject Bearer Token ─────────────────
 api.interceptors.request.use(
     config => {
         const token = Auth.getToken();
@@ -25,7 +20,6 @@ api.interceptors.request.use(
     error => Promise.reject(error)
 );
 
-// ── Response Interceptor — handle token expired / 401 ─────────
 api.interceptors.response.use(
     response => response,
     error => {
@@ -35,22 +29,19 @@ api.interceptors.response.use(
 
             if (status === 401) {
                 Auth.clear();
-                // Jangan redirect kalau sedang di halaman login/register
+
                 if (!window.location.pathname.includes('login') && !window.location.pathname.includes('register')) {
                     window.location.href = 'login.html';
                 }
             }
         } else if (!error.response) {
-            // Network error
+
             UI.showToast('Tidak dapat terhubung ke server. Periksa koneksi kamu.', 'error');
         }
         return Promise.reject(error);
     }
 );
 
-// ============================================================
-//  AUTH — Token Management
-// ============================================================
 const Auth = {
     getToken:  ()      => localStorage.getItem('pawtrainer_token'),
     getUser:   ()      => JSON.parse(localStorage.getItem('pawtrainer_user') || 'null'),
@@ -93,11 +84,6 @@ const Auth = {
     }
 };
 
-// ============================================================
-//  API METHODS
-// ============================================================
-
-// ── Auth ──────────────────────────────────────────────────────
 const AuthAPI = {
     register: (name, email, password, passwordConfirmation) =>
         api.post('/register', {
@@ -117,7 +103,6 @@ const AuthAPI = {
         api.get('/profile')
 };
 
-// ── Tutorials ─────────────────────────────────────────────────
 const TutorialAPI = {
     getAll: (page = 1) =>
         api.get(`/gateway/tutorials?page=${page}`),
@@ -138,7 +123,6 @@ const TutorialAPI = {
         api.delete(`/gateway/tutorials/${id}`)
 };
 
-// ── Comments ──────────────────────────────────────────────────
 const CommentAPI = {
     add: (tutorialId, comment, parentId = null) =>
         api.post('/gateway/comments', { tutorial_id: parseInt(tutorialId), parent_id: parentId, comment }),
@@ -147,7 +131,6 @@ const CommentAPI = {
         api.delete(`/gateway/comments/${id}`)
 };
 
-// ── Favorites ─────────────────────────────────────────────────
 const FavoriteAPI = {
     getAll: () =>
         api.get('/gateway/favorites'),
@@ -156,7 +139,6 @@ const FavoriteAPI = {
         api.post('/gateway/favorites', { tutorial_id: tutorialId })
 };
 
-// ── External APIs ─────────────────────────────────────────────
 const ExternalAPI = {
     getBreeds: () =>
         api.get('/gateway/breeds'),
@@ -168,7 +150,6 @@ const ExternalAPI = {
         api.get(`/gateway/videos/${encodeURIComponent(keyword)}?max_results=${maxResults}`)
 };
 
-// ── Categories ────────────────────────────────────────────────
 const CategoryAPI = {
     getAll: () =>
         api.get('/gateway/categories'),
@@ -183,7 +164,6 @@ const CategoryAPI = {
         api.delete(`/gateway/categories/${id}`)
 };
 
-// ── Admin ─────────────────────────────────────────────────────
 const AdminAPI = {
     getStats: () =>
         api.get('/gateway/admin/stats'),
@@ -210,9 +190,6 @@ const AdminAPI = {
         api.get('/gateway/categories')
 };
 
-// ============================================================
-//  UI HELPERS
-// ============================================================
 const UI = {
     showToast(message, type = 'info') {
         const existing = document.querySelector('.toast');

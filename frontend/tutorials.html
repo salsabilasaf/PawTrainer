@@ -23,7 +23,6 @@
         <button id="addTutorialBtn" class="btn btn--primary" style="display:none;">+ Tambah Tutorial</button>
     </div>
 
-    <!-- Filter Bar -->
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
         <div class="search-bar" style="flex:1;min-width:200px;max-width:360px;">
             <span>
@@ -49,7 +48,6 @@
     <div id="pagination" class="pagination"></div>
 </main>
 
-<!-- Modal Tambah Tutorial -->
 <div id="addModal" class="modal">
     <div class="modal__content">
         <div class="modal__header">
@@ -94,7 +92,6 @@
     </div>
 </div>
 
-<!-- Modal Edit Tutorial -->
 <div id="editModal" class="modal">
     <div class="modal__content">
         <div class="modal__header">
@@ -140,7 +137,6 @@
     </div>
 </div>
 
-<!-- Modal Delete Tutorial -->
 <div id="deleteModal" class="modal">
     <div class="modal__content">
         <div class="modal__header">
@@ -214,7 +210,6 @@ let currentPage = 1;
 let allTutorials = [];
 let pagination = {};
 
-// ── Modal Functions ───────────────────────────────────────────
 function openModal(modalId) {
     document.getElementById(modalId).classList.add('active');
 }
@@ -223,30 +218,26 @@ function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
 
-// Close modal when clicking outside
 ['addModal', 'editModal', 'deleteModal'].forEach(id => {
     document.getElementById(id).addEventListener('click', e => {
         if (e.target.id === id) closeModal(id);
     });
 });
 
-// ── Check if user is admin ────────────────────────────────────
 function isAdmin() {
     const user = Auth.getUser();
     return user?.role === 'admin';
 }
 
-// Show/hide add button based on role
 if (isAdmin()) {
     document.getElementById('addTutorialBtn').style.display = 'inline-flex';
     document.getElementById('addTutorialBtn').addEventListener('click', () => {
-        // Clear form
+        
         document.getElementById('addForm').reset();
         openModal('addModal');
     });
 }
 
-// Create tutorial
 async function submitAddTutorial() {
     const btn = document.getElementById('submitAddBtn');
     UI.setLoading(btn, true);
@@ -271,7 +262,6 @@ async function submitAddTutorial() {
     }
 }
 
-// Open edit modal with tutorial data
 async function openEditModal(tutorialId) {
     if (!isAdmin()) return;
     
@@ -296,7 +286,6 @@ async function openEditModal(tutorialId) {
     }
 }
 
-// Update tutorial
 async function submitEditTutorial() {
     const btn = document.getElementById('submitEditBtn');
     UI.setLoading(btn, true);
@@ -323,7 +312,6 @@ async function submitEditTutorial() {
     }
 }
 
-// Open delete modal
 function openDeleteModal(tutorialId, title) {
     if (!isAdmin()) return;
     document.getElementById('deleteId').value = tutorialId;
@@ -331,7 +319,6 @@ function openDeleteModal(tutorialId, title) {
     openModal('deleteModal');
 }
 
-// Delete tutorial
 async function submitDeleteTutorial() {
     const btn = document.getElementById('submitDeleteBtn');
     UI.setLoading(btn, true);
@@ -354,7 +341,6 @@ async function submitDeleteTutorial() {
         const res = await CategoryAPI.getAll();
         const cats = unwrapData(res).categories || [];
         
-        // Populate addCategory
         const addSel = document.getElementById('categoryFilter');
         cats.forEach(c => {
             const opt = document.createElement('option');
@@ -362,7 +348,6 @@ async function submitDeleteTutorial() {
             addSel.appendChild(opt);
         });
         
-        // Populate form categories
         ['addCategory', 'editCategory'].forEach(id => {
             const sel = document.getElementById(id);
             sel.innerHTML = '<option value="">Pilih Kategori</option>';

@@ -11,7 +11,6 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="api.js"></script>
 <script>
-    // Hanya admin yang boleh masuk halaman ini
     Auth.requireAuth();
     const _u = Auth.getUser();
     if (_u?.role !== 'admin') {
@@ -34,7 +33,6 @@
         </div>
     </div>
 
-    <!-- Statistik Admin -->
     <div class="stats-grid" id="statsGrid">
         <div class="stat-card">
             <div class="stat-card__value" id="statTutorials">—</div>
@@ -54,9 +52,6 @@
         </div>
     </div>
 
-    <!-- Quick Actions removed -->
-
-    <!-- Tutorial Terbaru -->
     <div class="section-header">
         <h2>Tutorial Terbaru</h2>
         <a href="tutorials.html" class="btn btn--outline btn--sm">Kelola Semua</a>
@@ -80,39 +75,14 @@
         </div>
     </div>
 
-
-    <!-- Activity Log -->
     <section class="activity-section">
     <div class="section-header">
         <h2>Aktivitas Terbaru</h2>
+        <span id="activityCount"></span>
     </div>
 
-    <div class="activity-list">
-
-        <div class="activity-item">
-            <span class="activity-dot"></span>
-            <div>
-                <p>Komentar baru ditambahkan</p>
-                <small>03 Jun 2026</small>
-            </div>
-        </div>
-
-        <div class="activity-item">
-            <span class="activity-dot"></span>
-            <div>
-                <p>Jaemin baru mendaftar</p>
-                <small>01 Jun 2026</small>
-            </div>
-        </div>
-
-        <div class="activity-item">
-            <span class="activity-dot"></span>
-            <div>
-                <p>Tutorial Clicker Training ditambahkan</p>
-                <small>01 Jun 2026</small>
-            </div>
-        </div>
-
+    <div id="activityLog" class="activity-list">
+        <p>Memuat aktivitas...</p>
     </div>
 </section>
 
@@ -126,15 +96,12 @@ async function loadDashboard() {
     document.getElementById('greeting').textContent =
         `Halo, ${user?.name?.split(' ')[0] || 'Admin'}!`;
 
-    // Reset ke skeleton saat refresh
     resetSkeletons();
 
-    // Load fallback cover images from The Cat API
     try {
         await loadBreedImages();
     } catch (_) {}
 
-    // Fetch tutorials
     let tutorials = [];
     let totalTutorials = 0;
     let totalComments = 0;
@@ -144,7 +111,6 @@ async function loadDashboard() {
         tutorials       = data.tutorials || [];
         totalTutorials  = data.pagination?.total || tutorials.length;
 
-        // Hitung total komentar dari data tutorial yang ada
         totalComments = tutorials.reduce((sum, t) => sum + (t.comments_count || 0), 0);
 
         document.getElementById('statTutorials').textContent = totalTutorials;
@@ -161,7 +127,6 @@ async function loadDashboard() {
         
     }
 
-    // Fetch categories
     try {
         const res  = await CategoryAPI.getAll();
         const cats = unwrapData(res).categories || [];
@@ -173,7 +138,6 @@ async function loadDashboard() {
             `<span style="color:var(--text-muted);font-size:0.9rem;">Gagal memuat kategori.</span>`;
     }
 
-    // Fetch total favorites
     try {
         const res  = await FavoriteAPI.getAll();
         const favs = unwrapData(res).favorites || [];
@@ -302,6 +266,22 @@ async function loadDashboardData() {
             `<div class="alert alert--error" style="grid-column:1/-1">Gagal memuat tutorial: ${UI.parseError(err)}</div>`;
     }
 
+    try {
+    const res = await AdminAPI.getActivityLog();
+    const logs = unwrapData(res).logs || [];
+
+    console.log(logs);
+    renderAdminActivityLog(logs);
+} catch (err) {
+    console.error('Activity Log Error:', err);
+
+    const logContainer = document.getElementById('activityLog');
+    if (logContainer) {
+        logContainer.innerHTML =
+            '<div class="alert alert--error">Gagal memuat aktivitas.</div>';
+    }
+}
+
 }
 
 function renderAdminActivityLog(logs) {
@@ -315,19 +295,51 @@ function renderAdminActivityLog(logs) {
 
     document.getElementById('activityCount').textContent = `${logs.length} entri terbaru`;
     container.innerHTML = logs.map(log => `
-        <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.875rem 1.125rem;background:var(--warm-white);border:1.5px solid var(--sand);border-radius:var(--radius);">
-            <span class="badge badge--gray">${log.type}</span>
+        <div style="
+display:flex;
+align-items:center;
+gap:0.75rem;
+padding:0.75rem 1rem;
+background:#fff;
+border:1px solid #e9e2d8;
+border-radius:12px;
+margin-bottom:0.75rem;
+">
+            <span style="
+font-size:0.72rem;
+font-weight:600;
+padding:0.3rem 0.6rem;
+background:#f5f5f5;
+border-radius:999px;
+color:#666;
+text-transform:capitalize;
+white-space:nowrap;
+">
+${log.type}
+</span>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;color:var(--text-primary);">${log.text}</div>
-                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">${UI.formatDate(log.created_at)}</div>
+                <div style="
+font-size:0.95rem;
+font-weight:500;
+color:#222;
+line-height:1.4;
+">${log.text}</div>
+                <div style="
+font-size:0.75rem;
+color:#999;
+margin-top:0.15rem;
+">${UI.formatDate(log.created_at)}</div>
             </div>
         </div>`).join('');
 }
 
 loadDashboard = loadDashboardData;
 
-// Initial load
 loadDashboard();
+
+setInterval(() => {
+    loadDashboard();
+}, 10000);
 </script>
 
 </body>

@@ -1392,3 +1392,14 @@ h3 { font-size: 1.2rem; }
 .activity-section{
     margin-top:48px;
 }
+.activity-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.activity-section{
+    background:transparent;
+    border:none;
+    padding:0;
+}

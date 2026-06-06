@@ -42,7 +42,6 @@
 </main>
 
 <script>
-// Helpers for thumbnail fallback (The Cat API + YouTube)
 let breedImages = [];
 
 function getYoutubeVideoId(url) {
@@ -118,7 +117,6 @@ async function loadFavorites() {
             <article class="card" style="position:relative;">
                 ${imgEl}
 
-                <!-- Remove button (trash icon) -->
                 <button class="btn btn--ghost btn--sm" title="Hapus dari favorit"
                     onclick="confirmRemove(event, ${t.id})"
                     style="position:absolute;top:0.6rem;right:0.6rem;background:rgba(255,255,255,0.9);

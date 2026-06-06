@@ -98,13 +98,13 @@
         try {
             const res  = await AuthAPI.register(name, email, password, passwordConfirm);
             const data = unwrapData(res);
-            Auth.save(data.token, data.user);
-
             const successEl = document.getElementById('successAlert');
-            successEl.textContent = '✓ Registrasi berhasil! Mengalihkan...';
+            successEl.textContent = 'Registrasi berhasil! Silakan login.';
             successEl.style.display = 'block';
 
-            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
 
         } catch (err) {
             UI.setLoading(registerBtn, false);
